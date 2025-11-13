@@ -1,11 +1,9 @@
 <template>
   <div class="document-view">
     <div class="document-controls">
-      <button @click="generateWordDocument" class="generate-btn">
-        📄 Generar Documento Word
-      </button>
-      <button @click="loadOriginalContent" class="sample-btn">
-        🎯 Cargar Contenido Original
+      <button @click="generateWordDocument" class="generate-btn" :disabled="isGenerating">
+        <span v-if="isGenerating" class="spinner">⏳</span>
+        <span v-else>📄 Generar Documento Word</span>
       </button>
       <button @click="resetDocument" class="reset-btn">
         🔄 Limpiar Todo
@@ -16,8 +14,16 @@
       {{ statusMessage }}
     </div>
 
+    <!-- Spinner overlay -->
+    <div v-if="isGenerating" class="spinner-overlay">
+      <div class="spinner-content">
+        <div class="spinner">⏳</div>
+        <p>Generando documento Word...</p>
+      </div>
+    </div>
+
     <div class="document-editor">
-      <!-- Configuración del Encabezado ACTUALIZADA -->
+      <!-- Configuración del Encabezado -->
       <div class="section header-config">
         <h3>📋 Configuración del Encabezado del Documento</h3>
         <div class="header-fields">
@@ -31,19 +37,19 @@
           </div>
           <div class="field-group">
             <label>CÓDIGO:</label>
-            <input v-model="headerConfig.codigo" placeholder="XX-P-XXX-#" class="header-input">
+            <input v-model="headerConfig.codigo" placeholder="PROC-ADM-004" class="header-input">
           </div>
           <div class="field-group">
             <label>Área:</label>
-            <input v-model="headerConfig.area" placeholder="Logística" class="header-input">
+            <input v-model="headerConfig.area" placeholder="Administración" class="header-input">
           </div>
           <div class="field-group">
             <label>Unidad:</label>
-            <input v-model="headerConfig.unidad" placeholder="Compras" class="header-input">
+            <input v-model="headerConfig.unidad" placeholder="Finanzas" class="header-input">
           </div>
           <div class="field-group">
             <label>Revisión:</label>
-            <input v-model="headerConfig.revision" placeholder="(1)" class="header-input">
+            <input v-model="headerConfig.revision" placeholder="01" class="header-input">
           </div>
           <div class="field-group">
             <label>Fecha:</label>
@@ -66,22 +72,41 @@
         ></textarea>
       </div>
 
-      <!-- Tabla de procedimiento -->
+      <!-- Sección de Procedimiento Mejorada -->
       <div class="section">
-        <h3>5. Procedimiento - Tabla de Actividades</h3>
+        <h3>5. Procedimiento</h3>
         <div class="section-description">
-          <p><strong>Instrucciones para la tabla:</strong></p>
+          <p><strong>Instrucciones para describir el procedimiento:</strong></p>
           <ul>
-            <li><strong>Sección principal:</strong> Deja # y Quién vacíos, escribe solo en Actividad</li>
-            <li><strong>Subsección:</strong> Llena solo # y Actividad, deja Quién vacío</li>
-            <li><strong>Fila normal:</strong> Llena las tres columnas</li>
-            <li><strong>Fila vacía:</strong> Para separar, deja las tres columnas vacías</li>
+            <li><strong>Escribe en lenguaje natural</strong> cómo se realiza el proceso</li>
+            <li><strong>Menciona los responsables</strong> y sus actividades</li>
+    <li><strong>Incluye decisiones</strong> (si algo está correcto o no)</li>
+            <li><strong>Describe alternativas</strong> (qué pasa si algo sale bien o mal)</li>
+            <li><strong>El sistema generará automáticamente</strong> la numeración continua (5.1, 5.2, 5.3...)</li>
+            <li><strong>El encabezado aparecerá en todas las páginas</strong> del documento generado</li>
           </ul>
+          <p><strong>Ejemplo de cómo escribir:</strong></p>
+          <pre class="format-example">
+El administrador revisa la lista de proveedores a pagar
+El administrador envía la lista al gerente general para revisión
+El gerente general revisa la lista de proveedores
+¿La lista está correcta?
+Si está correcta, el gerente general realiza el pago a los proveedores
+Si no está correcta, el gerente general devuelve la lista al administrador
+El administrador verifica y corrige la información de los proveedores
+Fin del proceso</pre>
         </div>
         
-        <!-- Vista previa de la tabla -->
+        <textarea 
+          v-model="procedimientoText" 
+          placeholder="Describe el procedimiento completo aquí en lenguaje natural..."
+          class="section-textarea"
+          rows="15"
+        ></textarea>
+        
+        <!-- Vista previa de la tabla generada automáticamente -->
         <div class="table-preview">
-          <h4>Vista Previa de la Tabla:</h4>
+          <h4>Vista Previa de la Tabla Generada Automáticamente:</h4>
           <div class="preview-container">
             <table class="preview-table">
               <thead>
@@ -92,9 +117,9 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(row, index) in procedureTable" :key="index" 
+                <tr v-for="(row, index) in generatedTable" :key="index" 
                     :class="getRowClass(row)">
-                  <td>{{ row.number || '&nbsp;' }}</td>
+                  <td>{{ row.number ? '5.' + row.number : '&nbsp;' }}</td>
                   <td>{{ row.who || '&nbsp;' }}</td>
                   <td>{{ row.activity || '&nbsp;' }}</td>
                 </tr>
@@ -102,65 +127,25 @@
             </table>
           </div>
         </div>
-        
-        <!-- Controles de la tabla -->
-        <div class="table-controls">
-          <button @click="addTableRow" class="control-btn add-row">+ Fila Normal</button>
-          <button @click="addTableSection" class="control-btn add-section">+ Sección</button>
-          <button @click="addTableSubsection" class="control-btn add-subsection">+ Subsección</button>
-          <button @click="addEmptyRow" class="control-btn add-empty">+ Espacio</button>
+
+        <div class="action-buttons">
+          <button @click="parseProcedimiento" class="parse-btn">🔄 Generar Tabla Automáticamente</button>
+          <button @click="loadExampleProcedimiento" class="sample-btn">📝 Cargar Ejemplo</button>
         </div>
-        
-        <!-- Editor de la tabla -->
-        <div class="table-editor">
-          <table class="editor-table">
-            <thead>
-              <tr>
-                <th width="15%">#</th>
-                <th width="25%">Quién</th>
-                <th width="50%">Actividad</th>
-                <th width="10%">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, index) in procedureTable" :key="index"
-                  :class="getRowClass(row)">
-                <td>
-                  <input 
-                    v-model="row.number" 
-                    :placeholder="getNumberPlaceholder(row)" 
-                    class="table-input"
-                    :disabled="!row.number && !row.who && row.activity"
-                  >
-                </td>
-                <td>
-                  <input 
-                    v-model="row.who" 
-                    :placeholder="getWhoPlaceholder(row)" 
-                    class="table-input"
-                    :disabled="(!row.number && row.activity) || (row.number && !row.who && row.activity)"
-                  >
-                </td>
-                <td>
-                  <textarea 
-                    v-model="row.activity" 
-                    :placeholder="getActivityPlaceholder(row)" 
-                    class="table-textarea"
-                  ></textarea>
-                </td>
-                <td>
-                  <button 
-                    @click="removeTableRow(index)" 
-                    class="remove-btn" 
-                    :disabled="procedureTable.length === 1"
-                  >
-                    ✕
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      </div>
+
+      <!-- Secciones restantes -->
+      <div class="section" v-for="(section, index) in remainingSections" :key="index + 10">
+        <h3>{{ section.title }}</h3>
+        <div class="section-description">
+          <p>{{ section.description }}</p>
         </div>
+        <textarea 
+          v-model="section.content" 
+          :placeholder="section.placeholder"
+          class="section-textarea"
+          :rows="section.rows || 6"
+        ></textarea>
       </div>
     </div>
   </div>
@@ -176,65 +161,71 @@ export default {
       headerConfig: {
         manualName: 'Manual de Políticas y Procedimientos',
         policyName: 'PAGO A PROVEEDORES',
-        codigo: 'XX-P-XXX-#',
-        area: 'Logística',
-        unidad: 'Compras',
-        revision: '(1)',
-        fecha: this.getFormattedDate() // Fecha actual por defecto
+        codigo: 'PROC-ADM-004',
+        area: 'Administración',
+        unidad: 'Finanzas',
+        revision: '01',
+        fecha: this.getFormattedDate()
       },
       sections: [
         { 
           title: '1. Objetivo o Propósito', 
           content: '',
-          description: 'Establecer el propósito general del procedimiento de pagos.',
-          placeholder: 'Establecer el procedimiento de pagos a nuestros proveedores con políticas claras y definidas...',
+          description: 'Establecer el propósito general del procedimiento.',
+          placeholder: 'Definir el objetivo principal del procedimiento y los resultados esperados...',
           rows: 4
         },
         { 
           title: '2. Alcance', 
           content: '',
           description: 'Definir los límites y cobertura del procedimiento.',
-          placeholder: 'Este procedimiento abarca el proceso a partir del requerimiento de pago...',
+          placeholder: 'Especificar los límites, áreas de aplicación y exclusiones del procedimiento...',
           rows: 4
         },
         { 
           title: '3. Responsabilidades', 
           content: '',
           description: 'Listar los roles y responsabilidades de cada participante.',
-          placeholder: '1. Jefe (a) Administrativo (a)\n2. Gerente General\n3. Proveedor...',
+          placeholder: '1. Responsable Principal\n2. Coordinador\n3. Ejecutor...',
           rows: 6
         },
         { 
           title: '4. Normativa', 
           content: '',
-          description: 'Establecer las normas, políticas y criterios aplicables. Use el formato: I. [TITULO], 1) Punto, a. Subpunto',
-          placeholder: 'I. [INTRODUCCION]\nLa Gerencia General del restaurante [ASADOS EL CARRETÓN]...\n1) Compras a créditos se establecerán...\na. Calidad del producto...',
+          description: 'Establecer las normas, políticas y criterios aplicables.',
+          placeholder: 'I. [MARCO NORMATIVO]\nEstablecer las normas y políticas que rigen el procedimiento...',
           rows: 12
-        },
+        }
+      ],
+      remainingSections: [
         { 
           title: '6. Anexos', 
           content: '',
           description: 'Listar los formatos, documentos y anexos relacionados.',
-          placeholder: 'Formato de listado de pago a proveedores\nRegistro de facturas pendientes...',
+          placeholder: 'Formato de registro\nDocumentos de referencia...',
           rows: 4
         },
         { 
           title: '7. Términos y Referencias', 
           content: '',
           description: 'Definir términos técnicos y referencias documentales.',
-          placeholder: 'RTN: Registro Tributario Nacional\nPrefactura: Documento previo a la factura definitiva...',
+          placeholder: 'Término 1: Definición\nTérmino 2: Explicación...',
           rows: 4
         }
       ],
-      procedureTable: [
-        { number: '', who: '', activity: 'Pagos de Compras de Crédito' }
-      ],
+      procedimientoText: '',
+      generatedTable: [],
       statusMessage: '',
-      statusType: ''
+      statusType: '',
+      isGenerating: false
+    }
+  },
+  computed: {
+    procedureTable() {
+      return this.generatedTable;
     }
   },
   methods: {
-    // Método para obtener la fecha formateada para el input type="date"
     getFormattedDate() {
       const today = new Date();
       const year = today.getFullYear();
@@ -243,183 +234,195 @@ export default {
       return `${year}-${month}-${day}`;
     },
 
-    generateWordDocument() {
+    parseProcedimiento() {
+      if (!this.procedimientoText.trim()) {
+        this.showStatus('❌ Por favor ingresa la descripción del procedimiento', 'error');
+        return;
+      }
+
+      try {
+        const lines = this.procedimientoText.split('\n').filter(line => line.trim() !== '');
+        const table = [];
+        let stepNumber = 1; // Iniciar desde 1 para que sea 5.1, 5.2, etc.
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          
+          if (line === '') continue;
+
+          // Detectar secciones principales (oraciones que describen procesos completos)
+          if (this.isMainProcessLine(line)) {
+            table.push({ number: '', who: '', activity: line });
+          }
+          // Detectar preguntas de decisión
+          else if (line.startsWith('¿')) {
+            table.push({ number: '', who: '', activity: line });
+          }
+          // Detectar alternativas (Si/No)
+          else if (line.toLowerCase().startsWith('si ') || line.toLowerCase().startsWith('no ') || 
+                   line.toLowerCase().startsWith('si,') || line.toLowerCase().startsWith('no,')) {
+            table.push({ number: '', who: '', activity: line });
+          }
+          // Detectar fin del proceso
+          else if (line.toLowerCase().includes('fin del proceso')) {
+            table.push({ number: '', who: '', activity: 'Fin del Proceso' });
+          }
+          // Detectar actividades con responsables
+          else {
+            const responsible = this.extractResponsible(line);
+            const activity = this.extractActivity(line, responsible);
+            
+            if (responsible || activity) {
+              table.push({ 
+                number: `${stepNumber}`, 
+                who: responsible, 
+                activity: activity 
+              });
+              stepNumber++; // Incrementar el número de paso para la siguiente actividad
+            }
+          }
+
+          // NO reiniciar el conteo en preguntas o fin del proceso
+          // El conteo continúa secuencialmente
+        }
+
+        this.generatedTable = table;
+        this.showStatus('✅ Tabla generada automáticamente desde la descripción', 'success');
+      } catch (error) {
+        this.showStatus('❌ Error al procesar la descripción: ' + error.message, 'error');
+      }
+    },
+
+    isMainProcessLine(line) {
+      // Una línea es un proceso principal si:
+      // - No es una pregunta
+      // - No es una alternativa (Si/No)
+      // - No menciona un responsable específico al inicio
+      // - Describe un proceso completo
+      // - No contiene "fin del proceso"
+      return !line.startsWith('¿') && 
+             !line.toLowerCase().startsWith('si ') && 
+             !line.toLowerCase().startsWith('no ') &&
+             !line.toLowerCase().startsWith('si,') && 
+             !line.toLowerCase().startsWith('no,') &&
+             !line.toLowerCase().includes('fin del proceso') &&
+             !this.extractResponsible(line) &&
+             line.length > 10; // Para evitar que líneas cortas se consideren secciones principales
+    },
+
+    extractResponsible(line) {
+      // Patrones comunes para detectar responsables
+      const patterns = [
+        /^el (\w+)/i,
+        /^la (\w+)/i,
+        /^los (\w+)/i,
+        /^las (\w+)/i,
+        /^un (\w+)/i,
+        /^una (\w+)/i,
+        /^(\w+) (revisa|envía|realiza|verifica|corrige|aprueba|autoriza)/i
+      ];
+
+      for (const pattern of patterns) {
+        const match = line.match(pattern);
+        if (match) {
+          return this.capitalizeFirstLetter(match[1] || match[2]);
+        }
+      }
+
+      return '';
+    },
+
+    extractActivity(line, responsible) {
+      if (!responsible) return line;
+
+      // Remover el responsable del inicio de la línea para obtener solo la actividad
+      const patterns = [
+        new RegExp(`^el ${responsible.toLowerCase()}\\s+`, 'i'),
+        new RegExp(`^la ${responsible.toLowerCase()}\\s+`, 'i'),
+        new RegExp(`^los ${responsible.toLowerCase()}\\s+`, 'i'),
+        new RegExp(`^las ${responsible.toLowerCase()}\\s+`, 'i'),
+        new RegExp(`^${responsible.toLowerCase()}\\s+`, 'i')
+      ];
+
+      let activity = line;
+      for (const pattern of patterns) {
+        activity = activity.replace(pattern, '');
+      }
+
+      return activity.charAt(0).toUpperCase() + activity.slice(1);
+    },
+
+    capitalizeFirstLetter(string) {
+      return string.charAt(0).toUpperCase() + string.slice(1);
+    },
+
+    loadExampleProcedimiento() {
+      this.procedimientoText = `El administrador revisa la lista de proveedores a pagar
+El administrador envía la lista al gerente general para revisión
+El gerente general revisa la lista de proveedores
+¿La lista está correcta?
+Si está correcta, el gerente general realiza el pago a los proveedores
+Si no está correcta, el gerente general devuelve la lista al administrador
+El administrador verifica y corrige la información de los proveedores
+El administrador actualiza la lista con la información corregida
+El proceso se repite desde el envío al gerente general
+Fin del proceso
+
+Proceso de compras urgentes
+El coordinador identifica la necesidad de compra urgente
+El coordinador completa el formulario de compra urgente
+El gerente aprueba la compra urgente
+¿La compra fue aprobada?
+Si fue aprobada, el departamento de compras procede con la adquisición
+Si no fue aprobada, se archiva la solicitud
+Fin del proceso`;
+
+      this.showStatus('📝 Ejemplo cargado. Haz clic en "Generar Tabla Automáticamente" para ver el resultado.', 'info');
+    },
+
+    getRowClass(row) {
+      if (!row.number && !row.who && row.activity && 
+          !row.activity.startsWith('¿') && 
+          !row.activity.toLowerCase().startsWith('si') && 
+          !row.activity.toLowerCase().startsWith('no') &&
+          row.activity !== 'Fin del Proceso') {
+        return 'section-row';
+      }
+      if (row.number && !row.who && row.activity) {
+        return 'subsection-row';
+      }
+      if (!row.number && !row.who && !row.activity) {
+        return 'empty-row';
+      }
+      return 'normal-row';
+    },
+
+    async generateWordDocument() {
+      this.isGenerating = true;
+      
+      // Asegurarse de que la tabla esté actualizada
+      if (this.procedimientoText && this.generatedTable.length === 0) {
+        this.parseProcedimiento();
+      }
+
       const documentData = {
         headerConfig: this.headerConfig,
         objetivo: this.sections[0].content,
         alcance: this.sections[1].content,
         responsabilidades: this.sections[2].content,
         normativa: this.sections[3].content,
-        anexos: this.sections[4].content,
-        terminos: this.sections[5].content,
-        nota: 'Documento generado automáticamente - ASADOS EL CARRETÓN'
+        anexos: this.remainingSections[0].content,
+        terminos: this.remainingSections[1].content
       };
 
       try {
-        generateWordDocument(documentData, this.procedureTable);
-        this.showStatus('✅ Documento Word generado exitosamente!', 'success');
+        await generateWordDocument(documentData, this.generatedTable);
+        this.showStatus('✅ Documento Word generado exitosamente! El encabezado aparecerá en todas las páginas.', 'success');
       } catch (error) {
         this.showStatus('❌ Error al generar el documento: ' + error.message, 'error');
+      } finally {
+        this.isGenerating = false;
       }
-    },
-
-    loadOriginalContent() {
-      // Cargar contenido de ejemplo para las secciones
-      this.sections[0].content = `Establecer el procedimiento de pagos a nuestros proveedores con
-políticas claras y definidas. para aprovechar los descuentos por pago
-oportuno, un mayor monto de crédito en base a bienes, insumos y
-servicios adquiridos por la entidad y por las cuales se genera una
-obligación a cancelar vía factura comercial.`;
-
-      this.sections[1].content = `Este procedimiento abarca el proceso a partir del requerimiento de pago
-por la adquisición del bien, insumos o servicios, hasta el pago mediante
-la transferencia bancaria y emisión de la factura con RTN. No incluye el
-proceso pre-contractual requerido para realizar la compra ni de la
-recepción del bien.`;
-
-      this.sections[2].content = `1.  Jefe (a) Administrativo (a)
-
-2.  Gerente General
-
-3.  Proveedor
-
-4.  Encargado (a) de Almacén
-
-5.  Cajero (a)`;
-
-      this.sections[3].content = `I.  [INTRODUCCION]
-
-La Gerencia General del restaurante [ASADOS EL CARRETÓN]
-junto con el jefe administrativo tiene que velar por los pagos de las
-facturas realizadas para abastecer el almacén y los restaurantes de
-[ASADOS EL CARRETÓN.]
-
-1)  Compras a créditos se establecerán de mutuo acuerdo entre ASADOS EL
-    CARRETON y el proveedor con un periodo máximo de quince días (15)
-    laborables.
-
-2)  ASADOS EL CARRETON podrá contar con uno o más proveedores de acuerdo
-    con sus necesidades de abastecimiento y las negociones contraídas
-    con cada uno de los proveedores.
-
-3)  ASADOS EL CARRETRON elegirá a sus proveedores en base a los
-    siguientes criterios:
-
-    a.  Calidad del producto o insumos
-
-    b.  Tiempos de entrega
-
-    c.  Conveniencia de la entrega
-
-    d.  Precios
-
-    e.  Periodos o ciclos de crédito.
-
-    f.  Modalidades de pago favorables para ASADOS EL CARRETON
-
-4)  El proveedor deberá emitir prefactura de compra para corroborar la
-    orden de compra emitida por ASADOS EL CARRETON asi como los precios
-    de los productos correspondan a la negociación previamente acordada.
-
-5)  ASADOS EL CARRETON en mutuo acuerdo con el proveedor se establecerá
-    la forma en que se hará el pago de la factura. Para esto se tienen
-    tres (3) opciones:
-
-    a.  Pago en efectivo.
-
-    b.  Pago vía transferencia electrónica.
-
-    c.  Pago por medio de link de pago.
-
-    d.  Pago con tarjeta de crédito
-
-6)  La administración de ASADOS EL CARRETON deberá gestionar con el
-    Gerente General los pagos a proveedores dentro de los quince (15)
-    días establecidos, evitando asi que las facturas caigan en mora.
-
-7)  Si llegada la fecha estipulada de pago al proveedor no se ha
-    realizado la cancelación de la factura, ASADOS EL CARRETON deberá
-    someterse a la sanción establecida por el proveedor siendo estas el
-    no abastecimiento de sus productos en tanto no sea cancelado el
-    saldo pendiente y/o el pago de interese moratorios al saldo adeudado
-    a la fecha.`;
-
-      this.sections[4].content = `Formato de listado de pago a proveedores
-Registro de facturas pendientes
-Comprobantes de pago
-Anexo No. 2: Lista de Pago a Proveedores`;
-
-      this.sections[5].content = `RTN: Registro Tributario Nacional
-Prefactura: Documento previo a la factura definitiva
-Transferencia electrónica: Pago realizado mediante transferencia bancaria
-Link de pago: Método de pago mediante enlace electrónico
-Mora: Estado de incumplimiento en el pago de obligaciones`;
-
-      // Cargar tabla de ejemplo
-      this.procedureTable = [
-        { number: '', who: '', activity: 'Pagos de Compras de Crédito' },
-        { number: '5.7', who: 'Administrador(a)', activity: 'Revisa las cuentas por pagar próximas a vencer' },
-        { number: '', who: 'Administrador', activity: 'Elabora la lista de Proveedor a efectuar pagos con el saldo adeudado.' },
-        { number: '', who: 'Administrador(a)', activity: 'envía al Gerente General la lista de proveedores a pagar. (Ver Anexo No. 2)' },
-        { number: '', who: 'Gerente General', activity: 'Revisa el documento Lista de Pago a Proveedores.' },
-        { number: '', who: '', activity: '¿Esta correcta?' },
-        { number: '', who: '', activity: 'Si, pasa al paso No. XXX' },
-        { number: '', who: '', activity: 'No, Devuelve el formato al administrador(a) para su corrección. Pasa al paso No. 5.7' },
-        { number: '', who: 'Gerente General', activity: 'Realiza el pago de las facturas: Transferencia, Electrónica, link de pago o tarjeta de crédito.' },
-        { number: '', who: 'Gerente General', activity: 'Envia a Administración los comprobantes de pago Imprime el recibo de pago.' },
-        { number: '', who: 'Administrador (a)', activity: 'Realiza la cancelación del pago en el sistema contable' },
-        { number: '', who: '', activity: 'Fin del Proceso' },
-        { number: '', who: '', activity: '' },
-        { number: '', who: '', activity: 'Pagos de Contado' }
-      ];
-
-      this.showStatus('📝 Contenido original cargado exitosamente!', 'success');
-    },
-
-    addTableRow() {
-      this.procedureTable.push({ number: '', who: '', activity: '' });
-    },
-
-    addTableSection() {
-      this.procedureTable.push({ number: '', who: '', activity: 'Nueva Sección' });
-    },
-
-    addTableSubsection() {
-      this.procedureTable.push({ number: '5.7.1.X', who: '', activity: 'Nueva Subsección' });
-    },
-
-    addEmptyRow() {
-      this.procedureTable.push({ number: '', who: '', activity: '' });
-    },
-
-    removeTableRow(index) {
-      if (this.procedureTable.length > 1) {
-        this.procedureTable.splice(index, 1);
-      }
-    },
-
-    getRowClass(row) {
-      if (!row.number && !row.who && row.activity) return 'section-row';
-      if (row.number && !row.who && row.activity) return 'subsection-row';
-      if (!row.number && !row.who && !row.activity) return 'empty-row';
-      return 'normal-row';
-    },
-
-    getNumberPlaceholder(row) {
-      if (!row.who && row.activity) return '5.7.1.3';
-      return '5.7';
-    },
-
-    getWhoPlaceholder(row) {
-      if (!row.number && row.activity) return '';
-      if (row.number && !row.who && row.activity) return '';
-      return 'Administrador(a)';
-    },
-
-    getActivityPlaceholder(row) {
-      if (!row.number && !row.who) return 'Nombre de la sección';
-      if (row.number && !row.who) return 'Nombre de la subsección';
-      return 'Describe la actividad...';
     },
 
     resetDocument() {
@@ -427,9 +430,19 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
         this.sections.forEach(section => {
           section.content = '';
         });
-        this.procedureTable = [{ number: '', who: '', activity: 'Pagos de Compras de Crédito' }];
-        // Resetear la fecha a la actual
+        this.remainingSections.forEach(section => {
+          section.content = '';
+        });
+        this.procedimientoText = '';
+        this.generatedTable = [];
         this.headerConfig.fecha = this.getFormattedDate();
+        // Restablecer valores por defecto
+        this.headerConfig.manualName = 'Manual de Políticas y Procedimientos';
+        this.headerConfig.policyName = 'PAGO A PROVEEDORES';
+        this.headerConfig.codigo = 'PROC-ADM-004';
+        this.headerConfig.area = 'Administración';
+        this.headerConfig.unidad = 'Finanzas';
+        this.headerConfig.revision = '01';
         this.showStatus('🗑️ Todo el contenido ha sido resetado', 'info');
       }
     },
@@ -438,7 +451,6 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
       this.statusMessage = message;
       this.statusType = type;
       
-      // Auto-ocultar el mensaje después de 5 segundos
       setTimeout(() => {
         this.statusMessage = '';
         this.statusType = '';
@@ -449,12 +461,11 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
 </script>
 
 <style scoped>
-/* Los estilos se mantienen igual que en tu archivo original */
 .document-view {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Times New Roman', serif;
 }
 
 .document-controls {
@@ -465,7 +476,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   flex-wrap: wrap;
 }
 
-.generate-btn, .sample-btn, .reset-btn {
+.generate-btn, .reset-btn {
   border: none;
   padding: 12px 24px;
   border-radius: 6px;
@@ -474,6 +485,17 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   font-weight: 600;
   transition: all 0.3s ease;
   min-width: 160px;
+  font-family: 'Times New Roman', serif;
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.generate-btn:disabled:hover {
+  transform: none;
 }
 
 .generate-btn {
@@ -481,18 +503,8 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   color: white;
 }
 
-.generate-btn:hover {
+.generate-btn:hover:not(:disabled) {
   background-color: #219a52;
-  transform: translateY(-2px);
-}
-
-.sample-btn {
-  background-color: #3498db;
-  color: white;
-}
-
-.sample-btn:hover {
-  background-color: #2980b9;
   transform: translateY(-2px);
 }
 
@@ -511,6 +523,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  font-family: 'Times New Roman', serif;
 }
 
 .section {
@@ -520,6 +533,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   border-radius: 8px;
   background: #ffffff;
   transition: box-shadow 0.3s ease;
+  font-family: 'Times New Roman', serif;
 }
 
 .section:hover {
@@ -533,6 +547,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   border-bottom: 3px solid #3498db;
   padding-bottom: 10px;
   font-weight: 700;
+  font-family: 'Times New Roman', serif;
 }
 
 .header-config {
@@ -557,6 +572,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   margin-bottom: 5px;
   color: #2c3e50;
   font-size: 0.9rem;
+  font-family: 'Times New Roman', serif;
 }
 
 .header-input {
@@ -565,6 +581,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.3s ease;
+  font-family: 'Times New Roman', serif;
 }
 
 .header-input:focus {
@@ -581,6 +598,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   font-size: 0.95rem;
   color: #495057;
   border-left: 4px solid #3498db;
+  font-family: 'Times New Roman', serif;
 }
 
 .section-description p {
@@ -595,6 +613,20 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
 .section-description li {
   margin-bottom: 5px;
   line-height: 1.4;
+  font-family: 'Times New Roman', serif;
+}
+
+.format-example {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 15px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 10px 0;
+  white-space: pre-wrap;
+  color: #495057;
 }
 
 .section-textarea {
@@ -603,7 +635,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   padding: 15px;
   border: 2px solid #e9ecef;
   border-radius: 6px;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: 'Times New Roman', serif;
   font-size: 14px;
   resize: vertical;
   line-height: 1.5;
@@ -616,13 +648,46 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-/* Estilos para la tabla de vista previa */
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.parse-btn, .sample-btn {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-family: 'Times New Roman', serif;
+}
+
+.parse-btn {
+  background-color: #27ae60;
+  color: white;
+}
+
+.sample-btn {
+  background-color: #3498db;
+  color: white;
+}
+
+.parse-btn:hover, .sample-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
 .table-preview {
   margin: 25px 0;
   padding: 20px;
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #dee2e6;
+  font-family: 'Times New Roman', serif;
 }
 
 .table-preview h4 {
@@ -630,6 +695,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   color: #2c3e50;
   font-size: 1.1rem;
   font-weight: 600;
+  font-family: 'Times New Roman', serif;
 }
 
 .preview-container {
@@ -645,7 +711,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   border-collapse: collapse;
   border: 1px solid #000;
   font-size: 11px;
-  font-family: "Times New Roman", serif;
+  font-family: 'Times New Roman', serif;
 }
 
 .preview-table th {
@@ -654,6 +720,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   background-color: #f0f0f0;
   font-weight: bold;
   text-align: center;
+  font-family: 'Times New Roman', serif;
 }
 
 .preview-table td {
@@ -661,6 +728,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   padding: 4px 6px;
   text-align: left;
   vertical-align: top;
+  font-family: 'Times New Roman', serif;
 }
 
 .section-row td {
@@ -686,141 +754,47 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   background-color: #ffffff;
 }
 
-/* Controles de la tabla */
-.table-controls {
+.spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
-  gap: 10px;
-  margin: 20px 0;
-  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
-.control-btn {
-  border: none;
-  padding: 8px 16px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.add-row {
-  background-color: #27ae60;
-  color: white;
-}
-
-.add-section {
-  background-color: #3498db;
-  color: white;
-}
-
-.add-subsection {
-  background-color: #9b59b6;
-  color: white;
-}
-
-.add-empty {
-  background-color: #95a5a6;
-  color: white;
-}
-
-.control-btn:hover {
-  transform: translateY(-1px);
-  opacity: 0.9;
-}
-
-/* Editor de tabla */
-.table-editor {
-  overflow-x: auto;
+.spinner-content {
   background: white;
-  border: 1px solid #dee2e6;
-  border-radius: 6px;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  font-family: 'Times New Roman', serif;
 }
 
-.editor-table {
-  width: 100%;
-  border-collapse: collapse;
+.spinner {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  display: inline-block;
+  animation: spin 1s linear infinite;
 }
 
-.editor-table th {
-  background-color: #34495e;
-  color: white;
-  padding: 12px 8px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 13px;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.editor-table td {
-  padding: 8px;
-  border-bottom: 1px solid #dee2e6;
+.spinner-content p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+  font-family: 'Times New Roman', serif;
 }
 
-.table-input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: 'Consolas', 'Monaco', monospace;
-  transition: border-color 0.3s ease;
-}
-
-.table-input:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
-}
-
-.table-input:disabled {
-  background-color: #f8f9fa;
-  color: #6c757d;
-  cursor: not-allowed;
-}
-
-.table-textarea {
-  width: 100%;
-  min-height: 50px;
-  padding: 8px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  resize: vertical;
-  font-size: 12px;
-  font-family: 'Consolas', 'Monaco', monospace;
-  line-height: 1.4;
-}
-
-.table-textarea:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
-}
-
-.remove-btn {
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  font-size: 12px;
-  transition: all 0.3s ease;
-}
-
-.remove-btn:disabled {
-  background-color: #95a5a6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.remove-btn:not(:disabled):hover {
-  background-color: #c0392b;
-  transform: scale(1.1);
-}
-
-/* Estilos para los mensajes de estado */
 .status-message {
   padding: 15px 20px;
   margin: 20px auto;
@@ -829,6 +803,7 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   text-align: center;
   max-width: 600px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  font-family: 'Times New Roman', serif;
 }
 
 .status-message.success {
@@ -849,7 +824,6 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
   border: 1px solid #bee5eb;
 }
 
-/* Estilos responsivos */
 @media (max-width: 768px) {
   .document-view {
     padding: 10px;
@@ -860,12 +834,12 @@ Mora: Estado de incumplimiento en el pago de obligaciones`;
     align-items: center;
   }
   
-  .generate-btn, .sample-btn, .reset-btn {
+  .generate-btn, .reset-btn {
     width: 100%;
     max-width: 300px;
   }
   
-  .table-controls {
+  .action-buttons {
     justify-content: center;
   }
   
