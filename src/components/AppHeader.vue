@@ -1,13 +1,13 @@
 <template>
   <header class="app-header">
     <div class="header-content">
-      <div class="logo-section">
-        <h1>Generador de Documentos</h1>
-        <p>Pago a Proveedores - ASADOS EL CARRETÓN</p>
-      </div>
+        <div class="logo-section">
+          <h1>{{ title }}</h1>
+          <p v-if="subtitle">{{ subtitle }}</p>
+        </div>
       <nav class="navigation">
         <router-link to="/" class="nav-link">Inicio</router-link>
-        <router-link to="/document" class="nav-link">Generar Documento</router-link>
+        <router-link to="/document" class="nav-link">Generar Proceso</router-link>
       </nav>
     </div>
   </header>
@@ -15,7 +15,17 @@
 
 <script>
 export default {
-  name: 'AppHeader'
+  name: 'AppHeader',
+  props: {
+    title: {
+      type: String,
+      default: 'Sistema de Gestión de Procesos'
+    },
+    subtitle: {
+      type: String,
+      default: ''
+    }
+  }
 }
 </script>
 

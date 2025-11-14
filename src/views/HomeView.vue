@@ -1,16 +1,16 @@
 <template>
   <div class="home-view">
     <div class="welcome-section">
-      <h2>Bienvenido al Generador de Documentos</h2>
-      <p>Esta aplicación te permite crear y personalizar documentos de "Pago a Proveedores".</p>
+      <h2>Bienvenido al Sistema de Gestión de Procesos</h2>
+  <p>Esta aplicación te permite crear y personalizar documentos y procedimientos.</p>
       
       <div class="features">
         <div class="feature-card">
-          <h3>📝 Documentos Editables</h3>
+          <h3> Documentos Editables</h3>
           <p>Todas las secciones del documento son completamente editables</p>
         </div>
         <div class="feature-card">
-          <h3>💾 Exportar a Word</h3>
+          <h3> Exportar a Word</h3>
           <p>Genera archivos Word listos para usar</p>
         </div>
       </div>

@@ -1,16 +1,6 @@
 <template>
   <div class="document-view">
-    <div class="document-controls">
-      <button @click="generateWordDocument" class="generate-btn" :disabled="isGenerating">
-        <span v-if="isGenerating" class="spinner">⏳</span>
-        <span v-else>📄 Generar Documento Word</span>
-      </button>
-      <button @click="resetDocument" class="reset-btn">
-        🔄 Limpiar Todo
-      </button>
-    </div>
-
-    <div class="status-message" v-if="statusMessage" :class="statusType">
+        <div class="status-message" v-if="statusMessage" :class="statusType">
       {{ statusMessage }}
     </div>
 
@@ -25,7 +15,7 @@
     <div class="document-editor">
       <!-- Configuración del Encabezado -->
       <div class="section header-config">
-        <h3>📋 Configuración del Encabezado del Documento</h3>
+        <h3> Configuración del Encabezado del Documento</h3>
         <div class="header-fields">
           <div class="field-group">
             <label>Manual de Políticas y Procedimientos:</label>
@@ -33,11 +23,11 @@
           </div>
           <div class="field-group">
             <label>POLÍTICA O PROCEDIMIENTO DE:</label>
-            <input v-model="headerConfig.policyName" placeholder="PAGO A PROVEEDORES" class="header-input">
+            <input v-model="headerConfig.policyName" placeholder="NOMBRE DEL PROCEDIMIENTO" class="header-input">
           </div>
           <div class="field-group">
             <label>CÓDIGO:</label>
-            <input v-model="headerConfig.codigo" placeholder="PROC-ADM-004" class="header-input">
+            <input v-model="headerConfig.codigo" placeholder="XX-P-XXX-#" class="header-input">
           </div>
           <div class="field-group">
             <label>Área:</label>
@@ -87,14 +77,15 @@
           </ul>
           <p><strong>Ejemplo de cómo escribir:</strong></p>
           <pre class="format-example">
-El administrador revisa la lista de proveedores a pagar
-El administrador envía la lista al gerente general para revisión
-El gerente general revisa la lista de proveedores
-¿La lista está correcta?
-Si está correcta, el gerente general realiza el pago a los proveedores
-Si no está correcta, el gerente general devuelve la lista al administrador
-El administrador verifica y corrige la información de los proveedores
-Fin del proceso</pre>
+            El administrador revisa la lista de proveedores a pagar
+            El administrador envía la lista al gerente general para revisión
+            El gerente general revisa la lista de proveedores
+            ¿La lista está correcta?
+            Si está correcta, el gerente general realiza el pago a los proveedores
+            Si no está correcta, el gerente general devuelve la lista al administrador
+            El administrador verifica y corrige la información de los proveedores
+            Fin del proceso
+          </pre>
         </div>
         
         <textarea 
@@ -129,8 +120,8 @@ Fin del proceso</pre>
         </div>
 
         <div class="action-buttons">
-          <button @click="parseProcedimiento" class="parse-btn">🔄 Generar Tabla Automáticamente</button>
-          <button @click="loadExampleProcedimiento" class="sample-btn">📝 Cargar Ejemplo</button>
+          <button @click="parseProcedimiento" class="parse-btn"> Generar Tabla Automáticamente</button>
+          <button @click="loadExampleProcedimiento" class="sample-btn"> Cargar Ejemplo</button>
         </div>
       </div>
 
@@ -147,6 +138,15 @@ Fin del proceso</pre>
           :rows="section.rows || 6"
         ></textarea>
       </div>
+      <div class="document-controls">
+      <button @click="generateWordDocument" class="generate-btn" :disabled="isGenerating">
+        <span v-if="isGenerating" class="spinner">⏳</span>
+        <span v-else> Generar Documento Word</span>
+      </button>
+      <button @click="resetDocument" class="reset-btn">
+         Limpiar Todo
+      </button>
+    </div>
     </div>
   </div>
 </template>
@@ -160,8 +160,8 @@ export default {
     return {
       headerConfig: {
         manualName: 'Manual de Políticas y Procedimientos',
-        policyName: 'PAGO A PROVEEDORES',
-        codigo: 'PROC-ADM-004',
+        policyName: 'PROCEDIMIENTO',
+        codigo: 'XX-P-XXX-#',
         area: 'Administración',
         unidad: 'Finanzas',
         revision: '01',
@@ -236,7 +236,7 @@ export default {
 
     parseProcedimiento() {
       if (!this.procedimientoText.trim()) {
-        this.showStatus('❌ Por favor ingresa la descripción del procedimiento', 'error');
+        this.showStatus(' Por favor ingresa la descripción del procedimiento', 'error');
         return;
       }
 
@@ -287,9 +287,9 @@ export default {
         }
 
         this.generatedTable = table;
-        this.showStatus('✅ Tabla generada automáticamente desde la descripción', 'success');
+        this.showStatus(' Tabla generada automáticamente desde la descripción', 'success');
       } catch (error) {
-        this.showStatus('❌ Error al procesar la descripción: ' + error.message, 'error');
+        this.showStatus(' Error al procesar la descripción: ' + error.message, 'error');
       }
     },
 
@@ -358,24 +358,24 @@ export default {
 
     loadExampleProcedimiento() {
       this.procedimientoText = `El administrador revisa la lista de proveedores a pagar
-El administrador envía la lista al gerente general para revisión
-El gerente general revisa la lista de proveedores
-¿La lista está correcta?
-Si está correcta, el gerente general realiza el pago a los proveedores
-Si no está correcta, el gerente general devuelve la lista al administrador
-El administrador verifica y corrige la información de los proveedores
-El administrador actualiza la lista con la información corregida
-El proceso se repite desde el envío al gerente general
-Fin del proceso
+      El administrador envía la lista al gerente general para revisión
+      El gerente general revisa la lista de proveedores
+      ¿La lista está correcta?
+      Si está correcta, el gerente general realiza el pago a los proveedores
+      Si no está correcta, el gerente general devuelve la lista al administrador
+      El administrador verifica y corrige la información de los proveedores
+      El administrador actualiza la lista con la información corregida
+      El proceso se repite desde el envío al gerente general
+      Fin del proceso
 
-Proceso de compras urgentes
-El coordinador identifica la necesidad de compra urgente
-El coordinador completa el formulario de compra urgente
-El gerente aprueba la compra urgente
-¿La compra fue aprobada?
-Si fue aprobada, el departamento de compras procede con la adquisición
-Si no fue aprobada, se archiva la solicitud
-Fin del proceso`;
+      Proceso de compras urgentes
+      El coordinador identifica la necesidad de compra urgente
+      El coordinador completa el formulario de compra urgente
+      El gerente aprueba la compra urgente
+      ¿La compra fue aprobada?
+      Si fue aprobada, el departamento de compras procede con la adquisición
+      Si no fue aprobada, se archiva la solicitud
+      Fin del proceso`;
 
       this.showStatus('📝 Ejemplo cargado. Haz clic en "Generar Tabla Automáticamente" para ver el resultado.', 'info');
     },
@@ -417,9 +417,9 @@ Fin del proceso`;
 
       try {
         await generateWordDocument(documentData, this.generatedTable);
-        this.showStatus('✅ Documento Word generado exitosamente! El encabezado aparecerá en todas las páginas.', 'success');
+        this.showStatus(' Documento Word generado exitosamente! El encabezado aparecerá en todas las páginas.', 'success');
       } catch (error) {
-        this.showStatus('❌ Error al generar el documento: ' + error.message, 'error');
+        this.showStatus(' Error al generar el documento: ' + error.message, 'error');
       } finally {
         this.isGenerating = false;
       }
@@ -437,9 +437,9 @@ Fin del proceso`;
         this.generatedTable = [];
         this.headerConfig.fecha = this.getFormattedDate();
         // Restablecer valores por defecto
-        this.headerConfig.manualName = 'Manual de Políticas y Procedimientos';
-        this.headerConfig.policyName = 'PAGO A PROVEEDORES';
-        this.headerConfig.codigo = 'PROC-ADM-004';
+  this.headerConfig.manualName = 'Manual de Políticas y Procedimientos';
+  this.headerConfig.policyName = 'PROCEDIMIENTO';
+        this.headerConfig.codigo = 'XX-P-XXX-#';
         this.headerConfig.area = 'Administración';
         this.headerConfig.unidad = 'Finanzas';
         this.headerConfig.revision = '01';
