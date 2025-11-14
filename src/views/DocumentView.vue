@@ -140,10 +140,11 @@
       </div>
       <div class="document-controls">
       <button @click="generateWordDocument" class="generate-btn" :disabled="isGenerating">
-        <span v-if="isGenerating" class="spinner">⏳</span>
-        <span v-else> Generar Documento Word</span>
+        <font-awesome-icon icon="file-word" class="button-icon" />
+        Generar Documento Word
       </button>
       <button @click="resetDocument" class="reset-btn">
+        <font-awesome-icon icon="fa-trash" class="button-icon" />
          Limpiar Todo
       </button>
     </div>
@@ -465,7 +466,6 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  font-family: 'Times New Roman', serif;
 }
 
 .document-controls {
@@ -485,7 +485,6 @@ export default {
   font-weight: 600;
   transition: all 0.3s ease;
   min-width: 160px;
-  font-family: 'Times New Roman', serif;
 }
 
 .generate-btn:disabled {
@@ -523,7 +522,6 @@ export default {
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-  font-family: 'Times New Roman', serif;
 }
 
 .section {
@@ -533,7 +531,6 @@ export default {
   border-radius: 8px;
   background: #ffffff;
   transition: box-shadow 0.3s ease;
-  font-family: 'Times New Roman', serif;
 }
 
 .section:hover {
@@ -547,7 +544,6 @@ export default {
   border-bottom: 3px solid #3498db;
   padding-bottom: 10px;
   font-weight: 700;
-  font-family: 'Times New Roman', serif;
 }
 
 .header-config {
@@ -572,7 +568,6 @@ export default {
   margin-bottom: 5px;
   color: #2c3e50;
   font-size: 0.9rem;
-  font-family: 'Times New Roman', serif;
 }
 
 .header-input {
@@ -581,7 +576,6 @@ export default {
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.3s ease;
-  font-family: 'Times New Roman', serif;
 }
 
 .header-input:focus {
@@ -598,7 +592,6 @@ export default {
   font-size: 0.95rem;
   color: #495057;
   border-left: 4px solid #3498db;
-  font-family: 'Times New Roman', serif;
 }
 
 .section-description p {
@@ -613,7 +606,6 @@ export default {
 .section-description li {
   margin-bottom: 5px;
   line-height: 1.4;
-  font-family: 'Times New Roman', serif;
 }
 
 .format-example {
@@ -635,7 +627,6 @@ export default {
   padding: 15px;
   border: 2px solid #e9ecef;
   border-radius: 6px;
-  font-family: 'Times New Roman', serif;
   font-size: 14px;
   resize: vertical;
   line-height: 1.5;
@@ -663,7 +654,6 @@ export default {
   font-size: 13px;
   font-weight: 600;
   transition: all 0.3s ease;
-  font-family: 'Times New Roman', serif;
 }
 
 .parse-btn {
@@ -687,7 +677,6 @@ export default {
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #dee2e6;
-  font-family: 'Times New Roman', serif;
 }
 
 .table-preview h4 {
@@ -695,7 +684,6 @@ export default {
   color: #2c3e50;
   font-size: 1.1rem;
   font-weight: 600;
-  font-family: 'Times New Roman', serif;
 }
 
 .preview-container {
@@ -711,7 +699,6 @@ export default {
   border-collapse: collapse;
   border: 1px solid #000;
   font-size: 11px;
-  font-family: 'Times New Roman', serif;
 }
 
 .preview-table th {
@@ -720,7 +707,6 @@ export default {
   background-color: #f0f0f0;
   font-weight: bold;
   text-align: center;
-  font-family: 'Times New Roman', serif;
 }
 
 .preview-table td {
@@ -728,7 +714,6 @@ export default {
   padding: 4px 6px;
   text-align: left;
   vertical-align: top;
-  font-family: 'Times New Roman', serif;
 }
 
 .section-row td {
@@ -773,7 +758,6 @@ export default {
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  font-family: 'Times New Roman', serif;
 }
 
 .spinner {
@@ -792,7 +776,6 @@ export default {
   margin: 0;
   font-size: 1.1rem;
   color: #333;
-  font-family: 'Times New Roman', serif;
 }
 
 .status-message {
@@ -803,7 +786,6 @@ export default {
   text-align: center;
   max-width: 600px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  font-family: 'Times New Roman', serif;
 }
 
 .status-message.success {
