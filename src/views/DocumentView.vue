@@ -806,31 +806,116 @@ export default {
   border: 1px solid #bee5eb;
 }
 
+</style>
+
+<style scoped>
+/* Responsive breakpoints */
+@media (max-width: 1024px) {
+  .document-editor {
+    padding: 22px;
+  }
+
+  .header-fields {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .section h3 {
+    font-size: 1.25rem;
+  }
+
+  .section-textarea {
+    min-height: 100px;
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  .preview-table {
+    font-size: 10px;
+  }
+
+  .action-buttons {
+    gap: 8px;
+  }
+}
+
 @media (max-width: 768px) {
   .document-view {
-    padding: 10px;
+    padding: 8px;
   }
-  
+
   .document-controls {
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
   }
   
   .generate-btn, .reset-btn {
     width: 100%;
-    max-width: 300px;
+    max-width: none;
   }
   
   .action-buttons {
     justify-content: center;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .parse-btn, .sample-btn {
+    width: 100%;
   }
   
   .section {
-    padding: 15px;
+    padding: 12px;
   }
   
   .header-fields {
     grid-template-columns: 1fr;
   }
+
+  .format-example {
+    font-size: 11px;
+    padding: 12px;
+  }
 }
+
+@media (max-width: 480px) {
+  .document-view {
+    padding: 6px;
+  }
+
+  .document-editor {
+    padding: 12px;
+  }
+
+  .section h3 {
+    font-size: 1.05rem;
+    padding-bottom: 8px;
+  }
+
+  .header-input {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+
+  .section-textarea {
+    min-height: 90px;
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .preview-container {
+    padding: 6px;
+  }
+
+  .preview-table th, .preview-table td {
+    padding: 6px 6px;
+  }
+
+  .button-icon {
+    display: none;
+  }
+}
+
 </style>
