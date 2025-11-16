@@ -10,7 +10,7 @@ export function generateWordDocument(documentData, procedureData) {
             const day = today.getDate().toString().padStart(2, '0');
             const month = (today.getMonth() + 1).toString().padStart(2, '0');
             const year = today.getFullYear();
-            const formattedDate = `${day} –${month} –${year}`;
+            const formattedDate = `${day}/${month}/${year}`;
 
             // Crear contenido principal del documento
             const documentContent = generateDocumentContent(documentData, procedureData, formattedDate);
@@ -34,41 +34,38 @@ export function generateWordDocument(documentData, procedureData) {
             // Generar el archivo .docx
             const blob = await zip.generateAsync({
                 type: "blob",
-                mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                compression: "DEFLATE"
             });
 
-            // Descargar el archivo
+            // Crear y descargar el archivo
             const fileName = `${documentData.headerConfig?.policyName || 'Procedimiento'}.docx`;
             
-            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-                // Para Internet Explorer
-                window.navigator.msSaveOrOpenBlob(blob, fileName);
-            } else {
-                // Para otros navegadores
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                link.style.display = 'none';
-                
-                document.body.appendChild(link);
-                link.click();
-                
-                // Limpiar
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                }, 100);
-            }
+            // Método moderno para descargar
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            link.style.display = 'none';
+            
+            document.body.appendChild(link);
+            link.click();
+            
+            // Limpiar
+            setTimeout(() => {
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }, 100);
             
             resolve(true);
         } catch (error) {
+            console.error('Error generating Word document:', error);
             reject(error);
         }
     });
 }
 
-// Función para generar el contenido principal del documento
+// Función para generar el contenido principal del documento (CORREGIDA)
 function generateDocumentContent(documentData, procedureData, formattedDate) {
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
@@ -92,26 +89,21 @@ function generateDocumentContent(documentData, procedureData, formattedDate) {
 </w:document>`;
 }
 
-// Función para generar sección con header
+// Función para generar sección con header (CORREGIDA)
 function generateSectionWithHeader() {
-    return `
-    <w:sectPr>
-        <w:headerReference w:type="default" r:id="rId6"/>
-        <w:pgSz w:w="11906" w:h="16838"/>
-        <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/>
-        <w:cols w:space="720"/>
-        <w:docGrid w:linePitch="360"/>
-    </w:sectPr>`;
+    return `<w:sectPr>
+    <w:headerReference w:type="default" r:id="rId6"/>
+</w:sectPr>`;
 }
 
-// Función para generar el header
+// Función para generar el header (CORREGIDA)
 function generateHeader(documentData, formattedDate) {
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
        xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
     <w:tbl>
         <w:tblPr>
-            <w:tblW w:w="0" w:type="auto"/>
+            <w:tblW w:w="5000" w:type="pct"/>
             <w:tblBorders>
                 <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
                 <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
@@ -120,7 +112,6 @@ function generateHeader(documentData, formattedDate) {
                 <w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/>
                 <w:insideV w:val="single" w:sz="4" w:space="0" w:color="000000"/>
             </w:tblBorders>
-            <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
         </w:tblPr>
         <w:tblGrid>
             <w:gridCol w:w="2275"/>
@@ -129,18 +120,12 @@ function generateHeader(documentData, formattedDate) {
             <w:gridCol w:w="2275"/>
         </w:tblGrid>
         <!-- Fila 1: Logo | Manual | Página -->
-        <w:tr w:rsidR="00A87A6F" w:rsidTr="00A87A6F">
+        <w:tr>
             <w:tc>
                 <w:tcPr>
                     <w:tcW w:w="2275" w:type="dxa"/>
-                    <w:tcBorders>
-                        <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                    </w:tcBorders>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+                <w:p>
                     <w:r>
                         <w:rPr>
                             <w:b/>
@@ -153,14 +138,8 @@ function generateHeader(documentData, formattedDate) {
             <w:tc>
                 <w:tcPr>
                     <w:tcW w:w="2275" w:type="dxa"/>
-                    <w:tcBorders>
-                        <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                    </w:tcBorders>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F" w:rsidP="00A87A6F">
+                <w:p>
                     <w:pPr>
                         <w:jc w:val="center"/>
                     </w:pPr>
@@ -169,7 +148,7 @@ function generateHeader(documentData, formattedDate) {
                             <w:b/>
                             <w:sz w:val="22"/>
                         </w:rPr>
-                        <w:t>${documentData.headerConfig?.manualName || 'Manual de Políticas y Procedimientos'}</w:t>
+                        <w:t>${escapeXML(documentData.headerConfig?.manualName || 'Manual de Políticas y Procedimientos')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -177,14 +156,8 @@ function generateHeader(documentData, formattedDate) {
                 <w:tcPr>
                     <w:tcW w:w="4550" w:type="dxa"/>
                     <w:gridSpan w:val="2"/>
-                    <w:tcBorders>
-                        <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                    </w:tcBorders>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F" w:rsidP="00A87A6F">
+                <w:p>
                     <w:pPr>
                         <w:jc w:val="right"/>
                     </w:pPr>
@@ -216,7 +189,7 @@ function generateHeader(documentData, formattedDate) {
                         </w:rPr>
                         <w:fldChar w:fldCharType="separate"/>
                     </w:r>
-                    <w:r w:rsidR="00A87A6F">
+                    <w:r>
                         <w:rPr>
                             <w:b/>
                             <w:sz w:val="22"/>
@@ -259,7 +232,7 @@ function generateHeader(documentData, formattedDate) {
                         </w:rPr>
                         <w:fldChar w:fldCharType="separate"/>
                     </w:r>
-                    <w:r w:rsidR="00A87A6F">
+                    <w:r>
                         <w:rPr>
                             <w:b/>
                             <w:sz w:val="22"/>
@@ -278,26 +251,19 @@ function generateHeader(documentData, formattedDate) {
             </w:tc>
         </w:tr>
         <!-- Fila 2: Título del procedimiento | Código -->
-        <w:tr w:rsidR="00A87A6F" w:rsidTr="00A87A6F">
+        <w:tr>
             <w:tc>
                 <w:tcPr>
                     <w:tcW w:w="4550" w:type="dxa"/>
                     <w:gridSpan w:val="2"/>
-                    <w:tcBorders>
-                        <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                    </w:tcBorders>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+                <w:p>
                     <w:r>
                         <w:rPr>
                             <w:b/>
                             <w:sz w:val="24"/>
-                            <w:smallCaps/>
                         </w:rPr>
-                        <w:t>${documentData.headerConfig?.policyName || 'PROCEDIMIENTO'}</w:t>
+                        <w:t>${escapeXML(documentData.headerConfig?.policyName || 'PROCEDIMIENTO')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -305,14 +271,8 @@ function generateHeader(documentData, formattedDate) {
                 <w:tcPr>
                     <w:tcW w:w="4550" w:type="dxa"/>
                     <w:gridSpan w:val="2"/>
-                    <w:tcBorders>
-                        <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                    </w:tcBorders>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F" w:rsidP="00A87A6F">
+                <w:p>
                     <w:pPr>
                         <w:jc w:val="right"/>
                     </w:pPr>
@@ -321,62 +281,44 @@ function generateHeader(documentData, formattedDate) {
                             <w:b/>
                             <w:sz w:val="20"/>
                         </w:rPr>
-                        <w:t>CÓDIGO: ${documentData.headerConfig?.codigo || 'XX-P-XXX-#'}</w:t>
+                        <w:t>CÓDIGO: ${escapeXML(documentData.headerConfig?.codigo || 'XX-P-XXX-#')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
         </w:tr>
         <!-- Fila 3: Área | Unidad | Revisión | Fecha -->
-        <w:tr w:rsidR="00A87A6F" w:rsidTr="00A87A6F">
+        <w:tr>
             <w:tc>
                 <w:tcPr>
                     <w:tcW w:w="2275" w:type="dxa"/>
-                    <w:tcBorders>
-                        <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                    </w:tcBorders>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+                <w:p>
                     <w:r>
                         <w:rPr>
                             <w:sz w:val="18"/>
                         </w:rPr>
-                        <w:t>Área: ${documentData.headerConfig?.area || 'Área responsable'}</w:t>
+                        <w:t>Área: ${escapeXML(documentData.headerConfig?.area || 'Área responsable')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
             <w:tc>
                 <w:tcPr>
                     <w:tcW w:w="2275" w:type="dxa"/>
-                    <w:tcBorders>
-                        <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                    </w:tcBorders>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+                <w:p>
                     <w:r>
                         <w:rPr>
                             <w:sz w:val="18"/>
                         </w:rPr>
-                        <w:t>Unidad: ${documentData.headerConfig?.unidad || 'Unidad específica'}</w:t>
+                        <w:t>Unidad: ${escapeXML(documentData.headerConfig?.unidad || 'Unidad específica')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
             <w:tc>
                 <w:tcPr>
                     <w:tcW w:w="2275" w:type="dxa"/>
-                    <w:tcBorders>
-                        <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                    </w:tcBorders>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F" w:rsidP="00A87A6F">
+                <w:p>
                     <w:pPr>
                         <w:jc w:val="center"/>
                     </w:pPr>
@@ -384,21 +326,15 @@ function generateHeader(documentData, formattedDate) {
                         <w:rPr>
                             <w:sz w:val="18"/>
                         </w:rPr>
-                        <w:t>Revisión: ${documentData.headerConfig?.revision || '(1)'}</w:t>
+                        <w:t>Revisión: ${escapeXML(documentData.headerConfig?.revision || '01')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
             <w:tc>
                 <w:tcPr>
                     <w:tcW w:w="2275" w:type="dxa"/>
-                    <w:tcBorders>
-                        <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                        <w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/>
-                    </w:tcBorders>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F" w:rsidP="00A87A6F">
+                <w:p>
                     <w:pPr>
                         <w:jc w:val="right"/>
                     </w:pPr>
@@ -413,14 +349,14 @@ function generateHeader(documentData, formattedDate) {
             </w:tc>
         </w:tr>
     </w:tbl>
-    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F"/>
+    <w:p/>
 </w:hdr>`;
 }
 
-// Funciones para generar las secciones del documento
+// Funciones para generar las secciones del documento (SIMPLIFICADAS)
 function generateObjectiveSection(content) {
     return `
-    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+    <w:p>
         <w:pPr>
             <w:pStyle w:val="Heading1"/>
         </w:pPr>
@@ -433,7 +369,7 @@ function generateObjectiveSection(content) {
 
 function generateScopeSection(content) {
     return `
-    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+    <w:p>
         <w:pPr>
             <w:pStyle w:val="Heading1"/>
         </w:pPr>
@@ -446,7 +382,7 @@ function generateScopeSection(content) {
 
 function generateResponsibilitiesSection(content) {
     return `
-    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+    <w:p>
         <w:pPr>
             <w:pStyle w:val="Heading1"/>
         </w:pPr>
@@ -459,7 +395,7 @@ function generateResponsibilitiesSection(content) {
 
 function generateNormativaSection(content) {
     return `
-    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+    <w:p>
         <w:pPr>
             <w:pStyle w:val="Heading1"/>
         </w:pPr>
@@ -472,7 +408,7 @@ function generateNormativaSection(content) {
 
 function generateProcedureSection(procedureData) {
     return `
-    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+    <w:p>
         <w:pPr>
             <w:pStyle w:val="Heading1"/>
         </w:pPr>
@@ -485,7 +421,7 @@ function generateProcedureSection(procedureData) {
 
 function generateAnexosSection(content) {
     return `
-    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+    <w:p>
         <w:pPr>
             <w:pStyle w:val="Heading1"/>
         </w:pPr>
@@ -498,7 +434,7 @@ function generateAnexosSection(content) {
 
 function generateTermsSection(content) {
     return `
-    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+    <w:p>
         <w:pPr>
             <w:pStyle w:val="Heading1"/>
         </w:pPr>
@@ -509,8 +445,10 @@ function generateTermsSection(content) {
     ${formatContentXML(content || 'Contenido pendiente de completar.')}`;
 }
 
-// Función para formatear contenido en XML
+// Función para formatear contenido en XML (MEJORADA)
 function formatContentXML(content) {
+    if (!content) return '<w:p><w:r><w:t> </w:t></w:r></w:p>';
+    
     const lines = content.split('\n');
     let formatted = '';
     
@@ -518,16 +456,16 @@ function formatContentXML(content) {
         const trimmedLine = line.trim();
         if (trimmedLine === '') {
             formatted += `
-    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+    <w:p>
         <w:r>
             <w:t> </w:t>
         </w:r>
     </w:p>`;
         } else {
             formatted += `
-    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+    <w:p>
         <w:r>
-            <w:t>${trimmedLine}</w:t>
+            <w:t>${escapeXML(trimmedLine)}</w:t>
         </w:r>
     </w:p>`;
         }
@@ -536,7 +474,7 @@ function formatContentXML(content) {
     return formatted;
 }
 
-// Función para generar la tabla de procedimiento en XML
+// Función para generar la tabla de procedimiento en XML (MEJORADA)
 function generateProcedureTableXML(procedureData) {
     if (!procedureData || procedureData.length === 0) {
         return formatContentXML('Contenido pendiente de completar.');
@@ -545,7 +483,7 @@ function generateProcedureTableXML(procedureData) {
     let tableXML = `
     <w:tbl>
         <w:tblPr>
-            <w:tblW w:w="0" w:type="auto"/>
+            <w:tblW w:w="5000" w:type="pct"/>
             <w:tblBorders>
                 <w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/>
                 <w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/>
@@ -554,23 +492,19 @@ function generateProcedureTableXML(procedureData) {
                 <w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/>
                 <w:insideV w:val="single" w:sz="4" w:space="0" w:color="000000"/>
             </w:tblBorders>
-            <w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/>
         </w:tblPr>
         <w:tblGrid>
             <w:gridCol w:w="1700"/>
             <w:gridCol w:w="2800"/>
             <w:gridCol w:w="6800"/>
         </w:tblGrid>
-        <w:tr w:rsidR="00A87A6F" w:rsidTr="00A87A6F">
+        <w:tr>
             <w:tc>
                 <w:tcPr>
                     <w:tcW w:w="1700" w:type="dxa"/>
                     <w:shd w:val="clear" w:color="auto" w:fill="D9D9D9"/>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
-                    <w:pPr>
-                        <w:spacing w:before="0" w:after="0"/>
-                    </w:pPr>
+                <w:p>
                     <w:r>
                         <w:rPr>
                             <w:b/>
@@ -584,10 +518,7 @@ function generateProcedureTableXML(procedureData) {
                     <w:tcW w:w="2800" w:type="dxa"/>
                     <w:shd w:val="clear" w:color="auto" w:fill="D9D9D9"/>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
-                    <w:pPr>
-                        <w:spacing w:before="0" w:after="0"/>
-                    </w:pPr>
+                <w:p>
                     <w:r>
                         <w:rPr>
                             <w:b/>
@@ -601,10 +532,7 @@ function generateProcedureTableXML(procedureData) {
                     <w:tcW w:w="6800" w:type="dxa"/>
                     <w:shd w:val="clear" w:color="auto" w:fill="D9D9D9"/>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
-                    <w:pPr>
-                        <w:spacing w:before="0" w:after="0"/>
-                    </w:pPr>
+                <w:p>
                     <w:r>
                         <w:rPr>
                             <w:b/>
@@ -625,15 +553,12 @@ function generateProcedureTableXML(procedureData) {
         }
 
         tableXML += `
-        <w:tr w:rsidR="00A87A6F" w:rsidTr="00A87A6F">
+        <w:tr>
             <w:tc>
                 <w:tcPr>
                     <w:tcW w:w="1700" w:type="dxa"/>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
-                    <w:pPr>
-                        <w:spacing w:before="0" w:after="0"/>
-                    </w:pPr>
+                <w:p>
                     <w:r>
                         <w:t>${number}</w:t>
                     </w:r>
@@ -643,12 +568,9 @@ function generateProcedureTableXML(procedureData) {
                 <w:tcPr>
                     <w:tcW w:w="2800" w:type="dxa"/>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
-                    <w:pPr>
-                        <w:spacing w:before="0" w:after="0"/>
-                    </w:pPr>
+                <w:p>
                     <w:r>
-                        <w:t>${who}</w:t>
+                        <w:t>${escapeXML(who)}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -656,12 +578,9 @@ function generateProcedureTableXML(procedureData) {
                 <w:tcPr>
                     <w:tcW w:w="6800" w:type="dxa"/>
                 </w:tcPr>
-                <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
-                    <w:pPr>
-                        <w:spacing w:before="0" w:after="0"/>
-                    </w:pPr>
+                <w:p>
                     <w:r>
-                        <w:t>${activity}</w:t>
+                        <w:t>${escapeXML(activity)}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -674,7 +593,18 @@ function generateProcedureTableXML(procedureData) {
     return tableXML;
 }
 
-// Funciones auxiliares para la estructura del documento .docx
+// Función para escapar caracteres XML (NUEVA - IMPORTANTE)
+function escapeXML(unsafe) {
+    if (!unsafe) return '';
+    return unsafe
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
+// Funciones auxiliares para la estructura del documento .docx (se mantienen igual)
 function getContentTypes() {
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -765,14 +695,6 @@ function getDocumentSettings() {
 <w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
     <w:defaultTabStop w:val="720"/>
     <w:characterSpacingControl w:val="doNotCompress"/>
-    <w:footnotePr>
-        <w:footnote w:id="-1"/>
-        <w:footnote w:id="0"/>
-    </w:footnotePr>
-    <w:endnotePr>
-        <w:endnote w:id="0"/>
-    </w:endnotePr>
-    <w:compat/>
 </w:settings>`;
 }
 
@@ -798,10 +720,8 @@ function getDocumentStyles() {
         <w:name w:val="heading 1"/>
         <w:basedOn w:val="Normal"/>
         <w:next w:val="Normal"/>
-        <w:link w:val="Heading1Char"/>
         <w:uiPriority w:val="9"/>
         <w:qFormat/>
-        <w:rsid w:val="00A87A6F"/>
         <w:pPr>
             <w:keepNext/>
             <w:keepLines/>
@@ -813,21 +733,9 @@ function getDocumentStyles() {
             <w:sz w:val="28"/>
         </w:rPr>
     </w:style>
-    <w:style w:type="character" w:styleId="Heading1Char">
-        <w:name w:val="Heading 1 Char"/>
-        <w:basedOn w:val="DefaultParagraphFont"/>
-        <w:link w:val="Heading1"/>
-        <w:uiPriority w:val="9"/>
-        <w:rsid w:val="00A87A6F"/>
-        <w:rPr>
-            <w:b/>
-            <w:sz w:val="28"/>
-        </w:rPr>
-    </w:style>
     <w:style w:type="paragraph" w:styleId="Normal">
         <w:name w:val="Normal"/>
         <w:qFormat/>
-        <w:rsid w:val="00A87A6F"/>
         <w:pPr>
             <w:spacing w:after="120" w:line="276" w:lineRule="auto"/>
         </w:pPr>
@@ -899,212 +807,13 @@ function getTheme() {
                 <a:latin typeface="Cambria"/>
                 <a:ea typeface=""/>
                 <a:cs typeface=""/>
-                <a:font script="Jpan" typeface="ＭＳ ゴシック"/>
-                <a:font script="Hang" typeface="맑은 고딕"/>
-                <a:font script="Hans" typeface="宋体"/>
-                <a:font script="Hant" typeface="新細明體"/>
-                <a:font script="Arab" typeface="Times New Roman"/>
-                <a:font script="Hebr" typeface="Times New Roman"/>
-                <a:font script="Thai" typeface="Angsana New"/>
-                <a:font script="Ethi" typeface="Nyala"/>
-                <a:font script="Beng" typeface="Vrinda"/>
-                <a:font script="Gujr" typeface="Shruti"/>
-                <a:font script="Khmr" typeface="MoolBoran"/>
-                <a:font script="Knda" typeface="Tunga"/>
-                <a:font script="Guru" typeface="Raavi"/>
-                <a:font script="Cans" typeface="Euphemia"/>
-                <a:font script="Cher" typeface="Plantagenet Cherokee"/>
-                <a:font script="Yiii" typeface="Microsoft Yi Baiti"/>
-                <a:font script="Tibt" typeface="Microsoft Himalaya"/>
-                <a:font script="Thaa" typeface="MV Boli"/>
-                <a:font script="Deva" typeface="Mangal"/>
-                <a:font script="Telu" typeface="Gautami"/>
-                <a:font script="Taml" typeface="Latha"/>
-                <a:font script="Syrc" typeface="Estrangelo Edessa"/>
-                <a:font script="Orya" typeface="Kalinga"/>
-                <a:font script="Mlym" typeface="Kartika"/>
-                <a:font script="Laoo" typeface="DokChampa"/>
-                <a:font script="Sinh" typeface="Iskoola Pota"/>
-                <a:font script="Mong" typeface="Mongolian Baiti"/>
-                <a:font script="Viet" typeface="Times New Roman"/>
-                <a:font script="Uigh" typeface="Microsoft Uighur"/>
-                <a:font script="Geor" typeface="Sylfaen"/>
             </a:majorFont>
             <a:minorFont>
                 <a:latin typeface="Calibri"/>
                 <a:ea typeface=""/>
                 <a:cs typeface=""/>
-                <a:font script="Jpan" typeface="ＭＳ 明朝"/>
-                <a:font script="Hang" typeface="맑은 고딕"/>
-                <a:font script="Hans" typeface="宋体"/>
-                <a:font script="Hant" typeface="新細明體"/>
-                <a:font script="Arab" typeface="Arial"/>
-                <a:font script="Hebr" typeface="Arial"/>
-                <a:font script="Thai" typeface="Cordia New"/>
-                <a:font script="Ethi" typeface="Nyala"/>
-                <a:font script="Beng" typeface="Vrinda"/>
-                <a:font script="Gujr" typeface="Shruti"/>
-                <a:font script="Khmr" typeface="DaunPenh"/>
-                <a:font script="Knda" typeface="Tunga"/>
-                <a:font script="Guru" typeface="Raavi"/>
-                <a:font script="Cans" typeface="Euphemia"/>
-                <a:font script="Cher" typeface="Plantagenet Cherokee"/>
-                <a:font script="Yiii" typeface="Microsoft Yi Baiti"/>
-                <a:font script="Tibt" typeface="Microsoft Himalaya"/>
-                <a:font script="Thaa" typeface="MV Boli"/>
-                <a:font script="Deva" typeface="Mangal"/>
-                <a:font script="Telu" typeface="Gautami"/>
-                <a:font script="Taml" typeface="Latha"/>
-                <a:font script="Syrc" typeface="Estrangelo Edessa"/>
-                <a:font script="Orya" typeface="Kalinga"/>
-                <a:font script="Mlym" typeface="Kartika"/>
-                <a:font script="Laoo" typeface="DokChampa"/>
-                <a:font script="Sinh" typeface="Iskoola Pota"/>
-                <a:font script="Mong" typeface="Mongolian Baiti"/>
-                <a:font script="Viet" typeface="Arial"/>
-                <a:font script="Uigh" typeface="Microsoft Uighur"/>
-                <a:font script="Geor" typeface="Sylfaen"/>
             </a:minorFont>
         </a:fontScheme>
-        <a:fmtScheme name="Office">
-            <a:fillStyleLst>
-                <a:solidFill>
-                    <a:schemeClr val="phClr"/>
-                </a:solidFill>
-                <a:gradFill rotWithShape="1">
-                    <a:gsLst>
-                        <a:gs pos="0">
-                            <a:schemeClr val="phClr">
-                                <a:lumMod val="110000"/>
-                                <a:satMod val="105000"/>
-                                <a:tint val="67000"/>
-                            </a:schemeClr>
-                        </a:gs>
-                        <a:gs pos="50000">
-                            <a:schemeClr val="phClr">
-                                <a:lumMod val="105000"/>
-                                <a:satMod val="103000"/>
-                                <a:tint val="73000"/>
-                            </a:schemeClr>
-                        </a:gs>
-                        <a:gs pos="100000">
-                            <a:schemeClr val="phClr">
-                                <a:lumMod val="105000"/>
-                                <a:satMod val="109000"/>
-                                <a:tint val="81000"/>
-                            </a:schemeClr>
-                        </a:gs>
-                    </a:gsLst>
-                    <a:lin ang="5400000" scaled="0"/>
-                </a:gradFill>
-                <a:gradFill rotWithShape="1">
-                    <a:gsLst>
-                        <a:gs pos="0">
-                            <a:schemeClr val="phClr">
-                                <a:satMod val="103000"/>
-                                <a:lumMod val="102000"/>
-                                <a:tint val="94000"/>
-                            </a:schemeClr>
-                        </a:gs>
-                        <a:gs pos="50000">
-                            <a:schemeClr val="phClr">
-                                <a:satMod val="110000"/>
-                                <a:lumMod val="100000"/>
-                                <a:shade val="100000"/>
-                            </a:schemeClr>
-                        </a:gs>
-                        <a:gs pos="100000">
-                            <a:schemeClr val="phClr">
-                                <a:lumMod val="99000"/>
-                                <a:satMod val="120000"/>
-                                <a:shade val="78000"/>
-                            </a:schemeClr>
-                        </a:gs>
-                    </a:gsLst>
-                    <a:lin ang="5400000" scaled="0"/>
-                </a:gradFill>
-            </a:fillStyleLst>
-            <a:lnStyleLst>
-                <a:ln w="6350" cap="flat" cmpd="sng" algn="ctr">
-                    <a:solidFill>
-                        <a:schemeClr val="phClr"/>
-                    </a:solidFill>
-                    <a:prstDash val="solid"/>
-                    <a:miter lim="800000"/>
-                </a:ln>
-                <a:ln w="12700" cap="flat" cmpd="sng" algn="ctr">
-                    <a:solidFill>
-                        <a:schemeClr val="phClr"/>
-                    </a:solidFill>
-                    <a:prstDash val="solid"/>
-                    <a:miter lim="800000"/>
-                </a:ln>
-                <a:ln w="19050" cap="flat" cmpd="sng" algn="ctr">
-                    <a:solidFill>
-                        <a:schemeClr val="phClr"/>
-                    </a:solidFill>
-                    <a:prstDash val="solid"/>
-                    <a:miter lim="800000"/>
-                </a:ln>
-            </a:lnStyleLst>
-            <a:effectStyleLst>
-                <a:effectStyle>
-                    <a:effectLst/>
-                </a:effectStyle>
-                <a:effectStyle>
-                    <a:effectLst/>
-                </a:effectStyle>
-                <a:effectStyle>
-                    <a:effectLst>
-                        <a:outerShdw blurRad="57150" dist="19050" dir="5400000" algn="ctr" rotWithShape="0">
-                            <a:srgbClr val="000000">
-                                <a:alpha val="63000"/>
-                            </a:srgbClr>
-                        </a:outerShdw>
-                    </a:effectLst>
-                </a:effectStyle>
-            </a:effectStyleLst>
-            <a:bgFillStyleLst>
-                <a:solidFill>
-                    <a:schemeClr val="phClr"/>
-                </a:solidFill>
-                <a:solidFill>
-                    <a:schemeClr val="phClr">
-                        <a:tint val="95000"/>
-                        <a:satMod val="170000"/>
-                    </a:schemeClr>
-                </a:solidFill>
-                <a:gradFill rotWithShape="1">
-                    <a:gsLst>
-                        <a:gs pos="0">
-                            <a:schemeClr val="phClr">
-                                <a:tint val="93000"/>
-                                <a:satMod val="150000"/>
-                                <a:shade val="98000"/>
-                                <a:lumMod val="103000"/>
-                            </a:schemeClr>
-                        </a:gs>
-                        <a:gs pos="50000">
-                            <a:schemeClr val="phClr">
-                                <a:tint val="98000"/>
-                                <a:satMod val="130000"/>
-                                <a:shade val="90000"/>
-                                <a:lumMod val="103000"/>
-                            </a:schemeClr>
-                        </a:gs>
-                        <a:gs pos="100000">
-                            <a:schemeClr val="phClr">
-                                <a:shade val="63000"/>
-                                <a:satMod val="120000"/>
-                            </a:schemeClr>
-                        </a:gs>
-                    </a:gsLst>
-                    <a:lin ang="5400000" scaled="0"/>
-                </a:gradFill>
-            </a:bgFillStyleLst>
-        </a:fmtScheme>
     </a:themeElements>
-    <a:objectDefaults/>
-    <a:extraClrSchemeLst/>
 </a:theme>`;
 }
