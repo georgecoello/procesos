@@ -1,6 +1,6 @@
 <template>
   <div class="document-view">
-        <div class="status-message" v-if="statusMessage" :class="statusType">
+    <div class="status-message" v-if="statusMessage" :class="statusType">
       {{ statusMessage }}
     </div>
 
@@ -54,12 +54,88 @@
         <div class="section-description">
           <p>{{ section.description }}</p>
         </div>
-        <textarea 
-          v-model="section.content" 
-          :placeholder="section.placeholder"
-          class="section-textarea"
-          :rows="section.rows || 6"
-        ></textarea>
+        
+        <div class="rich-text-editor">
+          <div class="toolbar">
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('bold') }"
+              @click="section.editor?.chain().focus().toggleBold().run()"
+              title="Negrita"
+            >
+              <strong>B</strong>
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('italic') }"
+              @click="section.editor?.chain().focus().toggleItalic().run()"
+              title="Cursiva"
+            >
+              <em>I</em>
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('underline') }"
+              @click="section.editor?.chain().focus().toggleUnderline().run()"
+              title="Subrayado"
+            >
+              <u>U</u>
+            </button>
+            
+            <div class="toolbar-separator"></div>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('bulletList') }"
+              @click="section.editor?.chain().focus().toggleBulletList().run()"
+              title="Lista con viñetas"
+            >
+              <span>•</span>
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('orderedList') }"
+              @click="section.editor?.chain().focus().toggleOrderedList().run()"
+              title="Lista numerada"
+            >
+              <span>1.</span>
+            </button>
+            
+            <div class="toolbar-separator"></div>
+            
+            <button
+              class="toolbar-btn"
+              @click="section.editor?.chain().focus().undo().run()"
+              title="Deshacer"
+            >
+              ↶
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              @click="section.editor?.chain().focus().redo().run()"
+              title="Rehacer"
+            >
+              ↷
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              @click="clearSection(section)"
+              title="Limpiar"
+            >
+              ×
+            </button>
+          </div>
+          
+          <editor-content 
+            :editor="section.editor" 
+            class="editor-content"
+          />
+        </div>
       </div>
 
       <!-- Sección de Procedimiento Mejorada -->
@@ -70,30 +146,114 @@
           <ul>
             <li><strong>Escribe en lenguaje natural</strong> cómo se realiza el proceso</li>
             <li><strong>Menciona los responsables</strong> y sus actividades</li>
-    <li><strong>Incluye decisiones</strong> (si algo está correcto o no)</li>
+            <li><strong>Incluye decisiones</strong> (si algo está correcto o no)</li>
             <li><strong>Describe alternativas</strong> (qué pasa si algo sale bien o mal)</li>
             <li><strong>El sistema generará automáticamente</strong> la numeración continua (5.1, 5.2, 5.3...)</li>
+            <li><strong>Para subsecciones usa:</strong> 5.1.1, a), b), •, -, →, subpaso 1, etc.</li>
             <li><strong>El encabezado aparecerá en todas las páginas</strong> del documento generado</li>
           </ul>
-          <p><strong>Ejemplo de cómo escribir:</strong></p>
+          <p><strong>Ejemplo de cómo escribir con subsecciones:</strong></p>
           <pre class="format-example">
-            El administrador revisa la lista de proveedores a pagar
-            El administrador envía la lista al gerente general para revisión
-            El gerente general revisa la lista de proveedores
-            ¿La lista está correcta?
-            Si está correcta, el gerente general realiza el pago a los proveedores
-            Si no está correcta, el gerente general devuelve la lista al administrador
-            El administrador verifica y corrige la información de los proveedores
-            Fin del proceso
+El administrador revisa la lista de proveedores a pagar
+El administrador envía la lista al gerente general para revisión
+El gerente general revisa la lista de proveedores
+¿La lista está correcta?
+Si está correcta, el gerente general realiza el pago a los proveedores
+a) Verifica disponibilidad de fondos
+b) Prepara órdenes de pago
+c) Registra en el sistema contable
+Si no está correcta, el gerente general devuelve la lista al administrador
+El administrador verifica y corrige la información de los proveedores
+5.1.1 Consulta base de datos de proveedores
+5.1.2 Actualiza información faltante
+5.1.3 Valida documentos de respaldo
+El administrador actualiza la lista con la información corregida
+El proceso se repite desde el envío al gerente general
+Fin del proceso
           </pre>
         </div>
         
-        <textarea 
-          v-model="procedimientoText" 
-          placeholder="Describe el procedimiento completo aquí en lenguaje natural..."
-          class="section-textarea"
-          rows="15"
-        ></textarea>
+        <div class="rich-text-editor">
+          <div class="toolbar">
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': procedimientoEditor?.isActive('bold') }"
+              @click="procedimientoEditor?.chain().focus().toggleBold().run()"
+              title="Negrita"
+            >
+              <strong>B</strong>
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': procedimientoEditor?.isActive('italic') }"
+              @click="procedimientoEditor?.chain().focus().toggleItalic().run()"
+              title="Cursiva"
+            >
+              <em>I</em>
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': procedimientoEditor?.isActive('underline') }"
+              @click="procedimientoEditor?.chain().focus().toggleUnderline().run()"
+              title="Subrayado"
+            >
+              <u>U</u>
+            </button>
+            
+            <div class="toolbar-separator"></div>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': procedimientoEditor?.isActive('bulletList') }"
+              @click="procedimientoEditor?.chain().focus().toggleBulletList().run()"
+              title="Lista con viñetas"
+            >
+              <span>•</span>
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': procedimientoEditor?.isActive('orderedList') }"
+              @click="procedimientoEditor?.chain().focus().toggleOrderedList().run()"
+              title="Lista numerada"
+            >
+              <span>1.</span>
+            </button>
+            
+            <div class="toolbar-separator"></div>
+            
+            <button
+              class="toolbar-btn"
+              @click="procedimientoEditor?.chain().focus().undo().run()"
+              title="Deshacer"
+            >
+              ↶
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              @click="procedimientoEditor?.chain().focus().redo().run()"
+              title="Rehacer"
+            >
+              ↷
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              @click="clearProcedimiento"
+              title="Limpiar"
+            >
+              ×
+            </button>
+          </div>
+          
+          <editor-content 
+            :editor="procedimientoEditor" 
+            class="editor-content"
+          />
+        </div>
         
         <!-- Vista previa de la tabla generada automáticamente -->
         <div class="table-preview">
@@ -120,8 +280,14 @@
         </div>
 
         <div class="action-buttons">
-          <button @click="parseProcedimiento" class="parse-btn"> Generar Tabla Automáticamente</button>
-          <button @click="loadExampleProcedimiento" class="sample-btn"> Cargar Ejemplo</button>
+          <button @click="parseProcedimiento" class="parse-btn"> 
+            <font-awesome-icon icon="table" class="button-icon" />
+            Generar Tabla Automáticamente
+          </button>
+          <button @click="loadExampleProcedimiento" class="sample-btn">
+            <font-awesome-icon icon="file-alt" class="button-icon" />
+            Cargar Ejemplo con Subsecciones
+          </button>
         </div>
       </div>
 
@@ -131,32 +297,116 @@
         <div class="section-description">
           <p>{{ section.description }}</p>
         </div>
-        <textarea 
-          v-model="section.content" 
-          :placeholder="section.placeholder"
-          class="section-textarea"
-          :rows="section.rows || 6"
-        ></textarea>
+        
+        <div class="rich-text-editor">
+          <div class="toolbar">
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('bold') }"
+              @click="section.editor?.chain().focus().toggleBold().run()"
+              title="Negrita"
+            >
+              <strong>B</strong>
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('italic') }"
+              @click="section.editor?.chain().focus().toggleItalic().run()"
+              title="Cursiva"
+            >
+              <em>I</em>
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('underline') }"
+              @click="section.editor?.chain().focus().toggleUnderline().run()"
+              title="Subrayado"
+            >
+              <u>U</u>
+            </button>
+            
+            <div class="toolbar-separator"></div>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('bulletList') }"
+              @click="section.editor?.chain().focus().toggleBulletList().run()"
+              title="Lista con viñetas"
+            >
+              <span>•</span>
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('orderedList') }"
+              @click="section.editor?.chain().focus().toggleOrderedList().run()"
+              title="Lista numerada"
+            >
+              <span>1.</span>
+            </button>
+            
+            <div class="toolbar-separator"></div>
+            
+            <button
+              class="toolbar-btn"
+              @click="section.editor?.chain().focus().undo().run()"
+              title="Deshacer"
+            >
+              ↶
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              @click="section.editor?.chain().focus().redo().run()"
+              title="Rehacer"
+            >
+              ↷
+            </button>
+            
+            <button
+              class="toolbar-btn"
+              @click="clearSection(section)"
+              title="Limpiar"
+            >
+              ×
+            </button>
+          </div>
+          
+          <editor-content 
+            :editor="section.editor" 
+            class="editor-content"
+          />
+        </div>
       </div>
+      
       <div class="document-controls">
-      <button @click="generateWordDocument" class="generate-btn" :disabled="isGenerating">
-        <font-awesome-icon icon="file-word" class="button-icon" />
-        Generar Documento Word
-      </button>
-      <button @click="resetDocument" class="reset-btn">
-        <font-awesome-icon icon="fa-trash" class="button-icon" />
-         Limpiar Todo
-      </button>
-    </div>
+        <button @click="generateWordDocument" class="generate-btn" :disabled="isGenerating">
+          <font-awesome-icon icon="file-word" class="button-icon" />
+          Generar Documento Word
+        </button>
+        <button @click="resetDocument" class="reset-btn">
+          <font-awesome-icon icon="trash" class="button-icon" />
+          Limpiar Todo
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { generateWordDocument } from '@/utils/docGenerator'
+import { useEditor, EditorContent } from '@tiptap/vue-3'
+import StarterKit from '@tiptap/starter-kit'
+import Underline from '@tiptap/extension-underline'
+import Placeholder from '@tiptap/extension-placeholder'
 
 export default {
   name: 'DocumentView',
+  components: {
+    EditorContent
+  },
   data() {
     return {
       headerConfig: {
@@ -171,54 +421,54 @@ export default {
       sections: [
         { 
           title: '1. Objetivo o Propósito', 
-          content: '',
           description: 'Establecer el propósito general del procedimiento.',
           placeholder: 'Definir el objetivo principal del procedimiento y los resultados esperados...',
-          rows: 4
+          content: '',
+          editor: null
         },
         { 
           title: '2. Alcance', 
-          content: '',
           description: 'Definir los límites y cobertura del procedimiento.',
           placeholder: 'Especificar los límites, áreas de aplicación y exclusiones del procedimiento...',
-          rows: 4
+          content: '',
+          editor: null
         },
         { 
           title: '3. Responsabilidades', 
-          content: '',
           description: 'Listar los roles y responsabilidades de cada participante.',
           placeholder: '1. Responsable Principal\n2. Coordinador\n3. Ejecutor...',
-          rows: 6
+          content: '',
+          editor: null
         },
         { 
           title: '4. Normativa', 
-          content: '',
           description: 'Establecer las normas, políticas y criterios aplicables.',
           placeholder: 'I. [MARCO NORMATIVO]\nEstablecer las normas y políticas que rigen el procedimiento...',
-          rows: 12
+          content: '',
+          editor: null
         }
       ],
       remainingSections: [
         { 
           title: '6. Anexos', 
-          content: '',
           description: 'Listar los formatos, documentos y anexos relacionados.',
           placeholder: 'Formato de registro\nDocumentos de referencia...',
-          rows: 4
+          content: '',
+          editor: null
         },
         { 
           title: '7. Términos y Referencias', 
-          content: '',
           description: 'Definir términos técnicos y referencias documentales.',
           placeholder: 'Término 1: Definición\nTérmino 2: Explicación...',
-          rows: 4
+          content: '',
+          editor: null
         }
       ],
-      procedimientoText: '',
       generatedTable: [],
       statusMessage: '',
       statusType: '',
-      isGenerating: false
+      isGenerating: false,
+      procedimientoEditor: null
     }
   },
   computed: {
@@ -226,7 +476,100 @@ export default {
       return this.generatedTable;
     }
   },
+  mounted() {
+    this.initializeEditors();
+  },
+  beforeUnmount() {
+    this.destroyEditors();
+  },
   methods: {
+    initializeEditors() {
+      // Inicializar secciones principales
+      this.sections.forEach((section, index) => {
+        section.editor = useEditor({
+          content: section.content,
+          extensions: [
+            StarterKit,
+            Underline,
+            Placeholder.configure({
+              placeholder: section.placeholder
+            })
+          ],
+          onUpdate: () => {
+            this.sections[index].content = section.editor.getHTML();
+          },
+          onCreate: () => {
+            // Asegurarse de que el editor esté listo
+            console.log(`Editor ${section.title} inicializado`);
+          }
+        });
+      });
+
+      // Inicializar secciones restantes
+      this.remainingSections.forEach((section, index) => {
+        section.editor = useEditor({
+          content: section.content,
+          extensions: [
+            StarterKit,
+            Underline,
+            Placeholder.configure({
+              placeholder: section.placeholder
+            })
+          ],
+          onUpdate: () => {
+            this.remainingSections[index].content = section.editor.getHTML();
+          }
+        });
+      });
+
+      // Inicializar editor de procedimiento
+      this.procedimientoEditor = useEditor({
+        content: '',
+        extensions: [
+          StarterKit,
+          Underline,
+          Placeholder.configure({
+            placeholder: 'Describe el procedimiento completo aquí en lenguaje natural...'
+          })
+        ],
+        onCreate: () => {
+          console.log('Editor de procedimiento inicializado');
+        }
+      });
+    },
+
+    destroyEditors() {
+      // Destruir todos los editores para evitar memory leaks
+      this.sections.forEach(section => {
+        if (section.editor) {
+          section.editor.destroy();
+        }
+      });
+      this.remainingSections.forEach(section => {
+        if (section.editor) {
+          section.editor.destroy();
+        }
+      });
+      if (this.procedimientoEditor) {
+        this.procedimientoEditor.destroy();
+      }
+    },
+
+    clearSection(section) {
+      if (section.editor) {
+        section.editor.commands.clearContent();
+        this.showStatus('Sección limpiada', 'info');
+      }
+    },
+
+    clearProcedimiento() {
+      if (this.procedimientoEditor) {
+        this.procedimientoEditor.commands.clearContent();
+        this.generatedTable = [];
+        this.showStatus('Procedimiento limpiado', 'info');
+      }
+    },
+
     getFormattedDate() {
       const today = new Date();
       const year = today.getFullYear();
@@ -236,39 +579,74 @@ export default {
     },
 
     parseProcedimiento() {
-      if (!this.procedimientoText.trim()) {
+      if (!this.procedimientoEditor) return;
+      
+      const textContent = this.procedimientoEditor.getText();
+      
+      if (!textContent.trim()) {
         this.showStatus(' Por favor ingresa la descripción del procedimiento', 'error');
         return;
       }
 
       try {
-        const lines = this.procedimientoText.split('\n').filter(line => line.trim() !== '');
+        const lines = textContent.split('\n').filter(line => line.trim() !== '');
         const table = [];
-        let stepNumber = 1; // Iniciar desde 1 para que sea 5.1, 5.2, etc.
+        let stepNumber = 1;
+        let subStepNumber = 0;
+        let currentMainStep = null;
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim();
           
           if (line === '') continue;
 
-          // Detectar secciones principales (oraciones que describen procesos completos)
-          if (this.isMainProcessLine(line)) {
-            table.push({ number: '', who: '', activity: line });
+          if (this.isSubsectionStarter(line)) {
+            if (currentMainStep) {
+              subStepNumber++;
+              const fullNumber = `${currentMainStep}.${subStepNumber}`;
+              const responsible = this.extractResponsible(line);
+              const activity = this.extractActivity(line, responsible);
+              
+              table.push({ 
+                number: fullNumber, 
+                who: responsible, 
+                activity: activity,
+                level: 'sub'
+              });
+            } else {
+              const responsible = this.extractResponsible(line);
+              const activity = this.extractActivity(line, responsible);
+              
+              table.push({ 
+                number: `${stepNumber}`, 
+                who: responsible, 
+                activity: activity 
+              });
+              stepNumber++;
+              subStepNumber = 0;
+            }
           }
-          // Detectar preguntas de decisión
+          else if (this.isMainProcessLine(line)) {
+            table.push({ number: '', who: '', activity: line, level: 'section' });
+            currentMainStep = null;
+            subStepNumber = 0;
+          }
           else if (line.startsWith('¿')) {
-            table.push({ number: '', who: '', activity: line });
+            table.push({ number: '', who: '', activity: line, level: 'question' });
+            currentMainStep = null;
+            subStepNumber = 0;
           }
-          // Detectar alternativas (Si/No)
           else if (line.toLowerCase().startsWith('si ') || line.toLowerCase().startsWith('no ') || 
                    line.toLowerCase().startsWith('si,') || line.toLowerCase().startsWith('no,')) {
-            table.push({ number: '', who: '', activity: line });
+            table.push({ number: '', who: '', activity: line, level: 'alternative' });
+            currentMainStep = null;
+            subStepNumber = 0;
           }
-          // Detectar fin del proceso
           else if (line.toLowerCase().includes('fin del proceso')) {
-            table.push({ number: '', who: '', activity: 'Fin del Proceso' });
+            table.push({ number: '', who: '', activity: 'Fin del Proceso', level: 'end' });
+            currentMainStep = null;
+            subStepNumber = 0;
           }
-          // Detectar actividades con responsables
           else {
             const responsible = this.extractResponsible(line);
             const activity = this.extractActivity(line, responsible);
@@ -279,12 +657,11 @@ export default {
                 who: responsible, 
                 activity: activity 
               });
-              stepNumber++; // Incrementar el número de paso para la siguiente actividad
+              currentMainStep = stepNumber;
+              stepNumber++;
+              subStepNumber = 0;
             }
           }
-
-          // NO reiniciar el conteo en preguntas o fin del proceso
-          // El conteo continúa secuencialmente
         }
 
         this.generatedTable = table;
@@ -294,13 +671,22 @@ export default {
       }
     },
 
+    isSubsectionStarter(line) {
+      const subsectionPatterns = [
+        /^\d+\.\d+\.\d+/,
+        /^[a-z]\)/,
+        /^[ivx]+\)/,
+        /^•\s/,
+        /^-\s/,
+        /^→\s/,
+        /^subpaso\s\d+/i,
+        /^detalle\s\d+/i
+      ];
+
+      return subsectionPatterns.some(pattern => pattern.test(line.toLowerCase()));
+    },
+
     isMainProcessLine(line) {
-      // Una línea es un proceso principal si:
-      // - No es una pregunta
-      // - No es una alternativa (Si/No)
-      // - No menciona un responsable específico al inicio
-      // - Describe un proceso completo
-      // - No contiene "fin del proceso"
       return !line.startsWith('¿') && 
              !line.toLowerCase().startsWith('si ') && 
              !line.toLowerCase().startsWith('no ') &&
@@ -308,11 +694,11 @@ export default {
              !line.toLowerCase().startsWith('no,') &&
              !line.toLowerCase().includes('fin del proceso') &&
              !this.extractResponsible(line) &&
-             line.length > 10; // Para evitar que líneas cortas se consideren secciones principales
+             !this.isSubsectionStarter(line) &&
+             line.length > 10;
     },
 
     extractResponsible(line) {
-      // Patrones comunes para detectar responsables
       const patterns = [
         /^el (\w+)/i,
         /^la (\w+)/i,
@@ -336,7 +722,6 @@ export default {
     extractActivity(line, responsible) {
       if (!responsible) return line;
 
-      // Remover el responsable del inicio de la línea para obtener solo la actividad
       const patterns = [
         new RegExp(`^el ${responsible.toLowerCase()}\\s+`, 'i'),
         new RegExp(`^la ${responsible.toLowerCase()}\\s+`, 'i'),
@@ -358,39 +743,58 @@ export default {
     },
 
     loadExampleProcedimiento() {
-      this.procedimientoText = `El administrador revisa la lista de proveedores a pagar
-      El administrador envía la lista al gerente general para revisión
-      El gerente general revisa la lista de proveedores
-      ¿La lista está correcta?
-      Si está correcta, el gerente general realiza el pago a los proveedores
-      Si no está correcta, el gerente general devuelve la lista al administrador
-      El administrador verifica y corrige la información de los proveedores
-      El administrador actualiza la lista con la información corregida
-      El proceso se repite desde el envío al gerente general
-      Fin del proceso
+      if (!this.procedimientoEditor) return;
+      
+      const exampleText = `El administrador revisa la lista de proveedores a pagar
+El administrador envía la lista al gerente general para revisión
+El gerente general revisa la lista de proveedores
+¿La lista está correcta?
+Si está correcta, el gerente general realiza el pago a los proveedores
+a) Verifica disponibilidad de fondos
+b) Prepara órdenes de pago
+c) Registra en el sistema contable
+Si no está correcta, el gerente general devuelve la lista al administrador
+El administrador verifica y corrige la información de los proveedores
+5.1.1 Consulta base de datos de proveedores
+5.1.2 Actualiza información faltante
+5.1.3 Valida documentos de respaldo
+El administrador actualiza la lista con la información corregida
+El proceso se repite desde el envío al gerente general
+Fin del proceso
 
-      Proceso de compras urgentes
-      El coordinador identifica la necesidad de compra urgente
-      El coordinador completa el formulario de compra urgente
-      El gerente aprueba la compra urgente
-      ¿La compra fue aprobada?
-      Si fue aprobada, el departamento de compras procede con la adquisición
-      Si no fue aprobada, se archiva la solicitud
-      Fin del proceso`;
+Proceso de compras urgentes
+El coordinador identifica la necesidad de compra urgente
+• Evalúa urgencia según criterios establecidos
+• Documenta justificación
+El coordinador completa el formulario de compra urgente
+El gerente aprueba la compra urgente
+¿La compra fue aprobada?
+Si fue aprobada, el departamento de compras procede con la adquisición
+i) Solicita cotizaciones
+ii) Evalúa proveedores
+iii) Emite orden de compra
+Si no fue aprobada, se archiva la solicitud
+Fin del proceso`;
 
-      this.showStatus('📝 Ejemplo cargado. Haz clic en "Generar Tabla Automáticamente" para ver el resultado.', 'info');
+      this.procedimientoEditor.commands.setContent(exampleText);
+      this.showStatus('📝 Ejemplo con subsecciones cargado. Haz clic en "Generar Tabla Automáticamente" para ver el resultado.', 'info');
     },
 
     getRowClass(row) {
-      if (!row.number && !row.who && row.activity && 
-          !row.activity.startsWith('¿') && 
-          !row.activity.toLowerCase().startsWith('si') && 
-          !row.activity.toLowerCase().startsWith('no') &&
-          row.activity !== 'Fin del Proceso') {
+      if (row.level === 'section') {
         return 'section-row';
       }
-      if (row.number && !row.who && row.activity) {
+      if (row.level === 'sub') {
         return 'subsection-row';
+      }
+      if (row.level === 'question') {
+        return 'question-row';
+      }
+      if (row.level === 'alternative') {
+        return 'alternative-row';
+      }
+      if (row.level === 'end') {
+        return 'end-row';
       }
       if (!row.number && !row.who && !row.activity) {
         return 'empty-row';
@@ -401,8 +805,11 @@ export default {
     async generateWordDocument() {
       this.isGenerating = true;
       
+      // Obtener el contenido de texto del editor de procedimiento
+      const procedimientoText = this.procedimientoEditor ? this.procedimientoEditor.getText() : '';
+      
       // Asegurarse de que la tabla esté actualizada
-      if (this.procedimientoText && this.generatedTable.length === 0) {
+      if (procedimientoText && this.generatedTable.length === 0) {
         this.parseProcedimiento();
       }
 
@@ -428,18 +835,25 @@ export default {
 
     resetDocument() {
       if (confirm('¿Estás seguro de que quieres limpiar todo el documento? Se perderán todos los cambios.')) {
+        // Limpiar todos los editores
         this.sections.forEach(section => {
-          section.content = '';
+          if (section.editor) {
+            section.editor.commands.clearContent();
+          }
         });
         this.remainingSections.forEach(section => {
-          section.content = '';
+          if (section.editor) {
+            section.editor.commands.clearContent();
+          }
         });
-        this.procedimientoText = '';
+        if (this.procedimientoEditor) {
+          this.procedimientoEditor.commands.clearContent();
+        }
         this.generatedTable = [];
         this.headerConfig.fecha = this.getFormattedDate();
         // Restablecer valores por defecto
-  this.headerConfig.manualName = 'Manual de Políticas y Procedimientos';
-  this.headerConfig.policyName = 'PROCEDIMIENTO';
+        this.headerConfig.manualName = 'Manual de Políticas y Procedimientos';
+        this.headerConfig.policyName = 'PROCEDIMIENTO';
         this.headerConfig.codigo = 'XX-P-XXX-#';
         this.headerConfig.area = 'Administración';
         this.headerConfig.unidad = 'Finanzas';
@@ -621,22 +1035,137 @@ export default {
   color: #495057;
 }
 
-.section-textarea {
-  width: 100%;
-  min-height: 120px;
-  padding: 15px;
+/* Estilos para el editor de texto enriquecido */
+.rich-text-editor {
   border: 2px solid #e9ecef;
   border-radius: 6px;
-  font-size: 14px;
-  resize: vertical;
-  line-height: 1.5;
+  background: white;
   transition: border-color 0.3s ease;
+  overflow: hidden;
 }
 
-.section-textarea:focus {
-  outline: none;
+.rich-text-editor:focus-within {
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.toolbar-btn {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #495057;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+}
+
+.toolbar-btn:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.toolbar-btn.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: #dee2e6;
+  margin: 0 4px;
+}
+
+.editor-content {
+  padding: 15px;
+  min-height: 120px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #2c3e50;
+  background: white;
+  outline: none;
+}
+
+/* Estilos para el contenido del editor Tiptap */
+:deep(.ProseMirror) {
+  outline: none;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #2c3e50;
+  min-height: 100px;
+}
+
+:deep(.ProseMirror) {
+  padding: 0;
+}
+
+:deep(.ProseMirror p) {
+  margin: 0 0 12px 0;
+}
+
+:deep(.ProseMirror:focus) {
+  outline: none;
+}
+
+:deep(.ProseMirror ul),
+:deep(.ProseMirror ol) {
+  padding-left: 24px;
+  margin: 12px 0;
+}
+
+:deep(.ProseMirror li) {
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+:deep(.ProseMirror ul li) {
+  list-style-type: disc;
+}
+
+:deep(.ProseMirror ol li) {
+  list-style-type: decimal;
+}
+
+:deep(.ProseMirror strong) {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+:deep(.ProseMirror em) {
+  font-style: italic;
+}
+
+:deep(.ProseMirror u) {
+  text-decoration: underline;
+}
+
+:deep(.ProseMirror .is-empty:first-child::before) {
+  content: attr(data-placeholder);
+  color: #adb5bd;
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
 
 .action-buttons {
@@ -654,6 +1183,9 @@ export default {
   font-size: 13px;
   font-weight: 600;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .parse-btn {
@@ -716,18 +1248,39 @@ export default {
   vertical-align: top;
 }
 
+/* Estilos para subsecciones y diferentes tipos de filas */
 .section-row td {
   background-color: #e3f2fd;
   font-weight: bold;
+  border-left: 4px solid #2196f3 !important;
 }
 
 .subsection-row td:first-child {
   font-weight: bold;
-  background-color: #f3e5f5;
+  background-color: #e8f5e8;
+  padding-left: 30px !important;
 }
 
 .subsection-row td:not(:first-child) {
-  background-color: #f3e5f5;
+  background-color: #e8f5e8;
+  padding-left: 10px;
+}
+
+.question-row td {
+  background-color: #fff3cd !important;
+  font-style: italic;
+  border-left: 4px solid #ffc107 !important;
+}
+
+.alternative-row td {
+  background-color: #d1ecf1 !important;
+  border-left: 4px solid #17a2b8 !important;
+}
+
+.end-row td {
+  background-color: #d4edda !important;
+  font-weight: bold;
+  border-left: 4px solid #28a745 !important;
 }
 
 .empty-row td {
@@ -806,9 +1359,6 @@ export default {
   border: 1px solid #bee5eb;
 }
 
-</style>
-
-<style scoped>
 /* Responsive breakpoints */
 @media (max-width: 1024px) {
   .document-editor {
@@ -824,9 +1374,9 @@ export default {
     font-size: 1.25rem;
   }
 
-  .section-textarea {
+  .editor-content {
     min-height: 100px;
-    font-size: 14px;
+    max-height: 300px;
     padding: 12px;
   }
 
@@ -878,6 +1428,17 @@ export default {
     font-size: 11px;
     padding: 12px;
   }
+
+  .toolbar {
+    padding: 6px 8px;
+  }
+
+  .toolbar-btn {
+    padding: 4px 6px;
+    font-size: 11px;
+    min-width: 24px;
+    height: 24px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -899,10 +1460,10 @@ export default {
     font-size: 13px;
   }
 
-  .section-textarea {
-    min-height: 90px;
+  .editor-content {
+    min-height: 80px;
+    max-height: 250px;
     padding: 10px;
-    font-size: 13px;
   }
 
   .preview-container {
@@ -917,5 +1478,4 @@ export default {
     display: none;
   }
 }
-
 </style>
