@@ -129,7 +129,6 @@ function generateHeader(documentData, formattedDate) {
             <w:gridCol w:w="2275"/>
             <w:gridCol w:w="2275"/>
         </w:tblGrid>
-        <!-- Fila 1: Logo | Manual | Página -->
         <w:tr w:rsidR="00A87A6F" w:rsidTr="00A87A6F">
             <w:tc>
                 <w:tcPr>
@@ -278,7 +277,6 @@ function generateHeader(documentData, formattedDate) {
                 </w:p>
             </w:tc>
         </w:tr>
-        <!-- Fila 2: Título del procedimiento | Código -->
         <w:tr w:rsidR="00A87A6F" w:rsidTr="00A87A6F">
             <w:tc>
                 <w:tcPr>
@@ -327,7 +325,6 @@ function generateHeader(documentData, formattedDate) {
                 </w:p>
             </w:tc>
         </w:tr>
-        <!-- Fila 3: Área | Unidad | Revisión | Fecha -->
         <w:tr w:rsidR="00A87A6F" w:rsidTr="00A87A6F">
             <w:tc>
                 <w:tcPr>
@@ -513,43 +510,135 @@ function generateTermsSection(content) {
 // CORRECCIÓN: Función para escapar caracteres XML
 function escapeXML(str) {
     if (typeof str !== 'string') return '';
-    return str.replace(/&/g, '&amp;')
-             .replace(/</g, '&lt;')
-             .replace(/>/g, '&gt;')
-             .replace(/"/g, '&quot;')
-             .replace(/'/g, '&apos;');
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;')
+        .replace(/\n/g, ' ')  // Reemplazar saltos de línea por espacios
+        .replace(/\r/g, '');  // Eliminar retornos de carro
 }
 
-// CORRECCIÓN: Función para formatear contenido en XML
+// ** CORRECCIÓN CRÍTICA: FUNCIÓN REVISADA PARA FORMATO DE CONTENIDO **
+// La versión anterior era propensa a errores por su lógica de escapar/desescapar.
 function formatContentXML(content) {
-    if (!content) return '';
-    
-    const lines = content.split('\n');
-    let formatted = '';
-    
-    lines.forEach(line => {
-        const trimmedLine = line.trim();
-        if (trimmedLine === '') {
-            formatted += `
+    if (!content) {
+        return `
     <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
         <w:r>
             <w:t xml:space="preserve"> </w:t>
         </w:r>
     </w:p>`;
-        } else {
-            formatted += `
+    }
+    
+    let result = '';
+    
+    // 1. Convertir entidades HTML comunes de vuelta a caracteres para facilitar el parsing regex.
+    // Esto es crucial para que los regex reconozcan <p> o <li> si vinieron como &lt;p&gt;
+    let cleanText = String(content || '')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&apos;/g, "'");
+
+    // 2. Definir regex para bloques
+    const paragraphRegex = /<p[^>]*>(.*?)<\/p>/gs;
+    const listItemRegex = /<li[^>]*>(.*?)<\/li>/gs;
+    
+    // Buscar listas y párrafos y procesarlos en orden
+    const allMatches = [];
+    let tempMatch;
+
+    // Buscar párrafos
+    paragraphRegex.lastIndex = 0;
+    while ((tempMatch = paragraphRegex.exec(cleanText)) !== null) {
+        allMatches.push({ type: 'p', index: tempMatch.index, text: tempMatch[0], content: tempMatch[1] });
+    }
+    
+    // Buscar listas (solo si el contenido del tag no es solo el <li>)
+    const listRegex = /<(ul|ol)[^>]*>(.*?)<\/(ul|ol)>/gs;
+    listRegex.lastIndex = 0;
+    while ((tempMatch = listRegex.exec(cleanText)) !== null) {
+        allMatches.push({ type: tempMatch[1], index: tempMatch.index, text: tempMatch[0], content: tempMatch[2] });
+    }
+
+    // Ordenar por índice para mantener el orden original del documento
+    allMatches.sort((a, b) => a.index - b.index);
+
+    if (allMatches.length === 0) {
+        // Si no hay tags de bloque (p/ul/ol), tratar todo como un solo párrafo.
+        const finalContent = cleanText
+            .replace(/<[^>]*>/g, '') // Eliminar tags restantes
+            .trim();
+        if (finalContent) {
+            result += `
     <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
         <w:r>
-            <w:t xml:space="preserve">${escapeXML(trimmedLine)}</w:t>
+            <w:t>${escapeXML(finalContent)}</w:t>
         </w:r>
     </w:p>`;
         }
+        return result;
+    }
+
+    allMatches.forEach(item => {
+        if (item.type === 'p') {
+            const finalContent = item.content
+                .replace(/<br\s*\/?\s*>/gi, ' ') // Reemplazar <br> con espacio
+                .replace(/<[^>]*>/g, '') // Eliminar otros tags
+                .trim();
+            
+            if (finalContent) {
+                 result += `
+    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+        <w:r>
+            <w:t>${escapeXML(finalContent)}</w:t>
+        </w:r>
+    </w:p>`;
+            }
+        } else if (item.type === 'ul' || item.type === 'ol') {
+            // Procesar elementos de la lista
+            const listType = item.type;
+            const listContent = item.content; // Contenido dentro de <ul> o <ol>
+            
+            listContent.replace(listItemRegex, (match, text) => {
+                 const liText = text
+                    .replace(/<br\s*\/?\s*>/gi, ' ') // Reemplazar <br> con espacio
+                    .replace(/<[^>]*>/g, '') // Eliminar otros tags
+                    .trim();
+                
+                if (liText) {
+                    const style = listType === 'ul' ? 'ListBullet' : 'ListNumber';
+                    const numPr = listType === 'ol' ? '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>' : '';
+
+                    result += `
+    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+        <w:pPr>
+            <w:pStyle w:val="${style}"/>
+            ${numPr}
+        </w:pPr>
+        <w:r>
+            <w:t>${escapeXML(liText)}</w:t>
+        </w:r>
+    </w:p>`;
+                }
+            });
+        }
     });
-    
-    return formatted;
+
+    return result || `
+    <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
+        <w:r>
+            <w:t xml:space="preserve"> </w:t>
+        </w:r>
+    </w:p>`;
 }
 
-// CORRECCIÓN: Función para generar la tabla de procedimiento en XML
+// ** CORRECCIÓN CRÍTICA: LIMPIEZA DE ACTIVITY ANTES DE ESCAPAR **
 function generateProcedureTableXML(procedureData) {
     if (!procedureData || procedureData.length === 0) {
         return formatContentXML('Contenido pendiente de completar.');
@@ -629,40 +718,35 @@ function generateProcedureTableXML(procedureData) {
         </w:tr>`;
 
     procedureData.forEach((row) => {
-        let number = row.number || '';
-        const who = row.who || '';
-        const activity = row.activity || '';
-        const level = row.level || '';
+        let number = String(row.number || '').trim();
+        const who = String(row.who || '').trim();
+        const activity = String(row.activity || '').trim();
+        const level = String(row.level || '').trim();
 
-        // CORRECCIÓN: Manejar números simples y jerárquicos (ej. "4.1" -> "5.4.1"),
-        // ahora aplicado independientemente del valor de 'level'
+        // Procesar número jerárquico
         if (number) {
-            const trimmed = String(number).trim();
-
-            // Si es un número simple (p.ej. "3"), agregar "5."
-            if (!trimmed.includes('.') && !isNaN(trimmed)) {
-                number = `5.${trimmed}`;
-            } else {
-                // Si es jerárquico (p.ej. "4.1" o "4.1.2") y no comienza con "5.",
-                // validar que todos los segmentos sean numéricos y prefijar "5."
-                if (!trimmed.startsWith('5.')) {
-                    const segments = trimmed.split('.');
-                    const allNumeric = segments.every(seg => /^\d+$/.test(seg));
-                    if (allNumeric) {
-                        number = `5.${trimmed}`;
-                    } else {
-                        // Si no es un patrón numérico esperado, mantener tal cual
-                        number = trimmed;
-                    }
-                } else {
-                    // Ya comienza con "5.", mantener
-                    number = trimmed;
+            if (!number.includes('.') && !isNaN(number)) {
+                number = `5.${number}`;
+            } else if (!number.startsWith('5.')) {
+                const segments = number.split('.');
+                const allNumeric = segments.every(seg => /^\d+$/.test(seg.trim()));
+                if (allNumeric) {
+                    number = `5.${number}`;
                 }
             }
         }
+        
+        // CORRECCIÓN: Limpiar el contenido de actividad de posibles tags HTML o caracteres no deseados
+        const cleanActivity = String(activity || '')
+            .replace(/<[^>]*>/g, '') // Elimina todos los tags HTML (es la causa más común de errores)
+            .replace(/&nbsp;/g, ' ') // Limpia entidades HTML comunes
+            .replace(/&quot;/g, '"')
+            .trim();
 
-        // Asegurar que number sea cadena antes de escapar
-        number = String(number);
+        // Escapar todos los valores antes de insertar
+        const safeNumber = escapeXML(number);
+        const safeWho = escapeXML(who);
+        const safeActivity = escapeXML(cleanActivity); // Usar el texto limpio/escapado
 
         tableXML += `
         <w:tr w:rsidR="00A87A6F" w:rsidTr="00A87A6F">
@@ -681,7 +765,7 @@ function generateProcedureTableXML(procedureData) {
                         ${level === 'sub' ? '<w:ind w:left="200"/>' : ''}
                     </w:pPr>
                     <w:r>
-                        <w:t>${escapeXML(number)}</w:t>
+                        <w:t>${safeNumber}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -699,7 +783,7 @@ function generateProcedureTableXML(procedureData) {
                         <w:spacing w:before="0" w:after="0"/>
                     </w:pPr>
                     <w:r>
-                        <w:t>${escapeXML(who)}</w:t>
+                        <w:t>${safeWho}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -717,7 +801,7 @@ function generateProcedureTableXML(procedureData) {
                         <w:spacing w:before="0" w:after="0"/>
                     </w:pPr>
                     <w:r>
-                        <w:t>${escapeXML(activity)}</w:t>
+                        <w:t>${safeActivity}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>

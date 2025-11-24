@@ -619,8 +619,9 @@ export default {
               if (event.key === 'Enter' && !event.shiftKey) {
                 const { state } = view;
                 const { $from } = state.selection;
-                const parent = $from.parent;
-                if (parent && parent.type && parent.type.name === 'listItem') {
+                const depth = $from.depth;
+                const parentNode = depth > 0 ? $from.node(depth - 1) : null;
+                if (parentNode && parentNode.type && parentNode.type.name === 'listItem') {
                   return false;
                 }
                 view.dispatch(state.tr.replaceSelectionWith(state.schema.nodes.hardBreak.create()).scrollIntoView());
