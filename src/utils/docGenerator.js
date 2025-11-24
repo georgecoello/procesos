@@ -10,15 +10,16 @@ export function generateWordDocument(documentData, procedureData) {
             const day = today.getDate().toString().padStart(2, '0');
             const month = (today.getMonth() + 1).toString().padStart(2, '0');
             const year = today.getFullYear();
-            const formattedDate = `${day} –${month} –${year}`;
+            // CORRECCIÓN: Usar guiones normales
+            const formattedDate = `${day}-${month}-${year}`;
 
             // Crear contenido principal del documento
             const documentContent = generateDocumentContent(documentData, procedureData, formattedDate);
             
-            // Crear el archivo .doc (usando formato Word 2003 XML)
+            // Crear el archivo .docx (formato Word moderno)
             const zip = new JSZip();
             
-            // Agregar la estructura básica de un documento .doc (Word 2003 XML)
+            // Agregar la estructura básica de un documento .docx (Office Open XML)
             zip.file("[Content_Types].xml", getContentTypes());
             zip.file("_rels/.rels", getRels());
             zip.file("docProps/app.xml", getAppProperties());
@@ -32,14 +33,15 @@ export function generateWordDocument(documentData, procedureData) {
             zip.file("word/fontTable.xml", getFontTable());
             zip.file("word/theme/theme1.xml", getTheme());
 
-            // Generar el archivo .doc con mimeType correcto
+            // Generar el archivo .docx con mimeType correcto
             const blob = await zip.generateAsync({
                 type: "blob",
-                mimeType: "application/msword"
+                mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                compression: "DEFLATE"
             });
 
-            // Descargar el archivo con extensión .doc
-            const fileName = `${documentData.headerConfig?.policyName || 'Procedimiento'}.doc`;
+            // Descargar el archivo con extensión .docx
+            const fileName = `${documentData.headerConfig?.policyName || 'Procedimiento'}.docx`;
             
             if (window.navigator && window.navigator.msSaveOrOpenBlob) {
                 // Para Internet Explorer
@@ -73,7 +75,14 @@ export function generateWordDocument(documentData, procedureData) {
 function generateDocumentContent(documentData, procedureData, formattedDate) {
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+            xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+            xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+            xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
+            xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"
+            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+            xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:v="urn:schemas-microsoft-com:vml">
     <w:body>
         ${generateObjectiveSection(documentData.objetivo)}
         ${generateScopeSection(documentData.alcance)}
@@ -97,7 +106,10 @@ function generateDocumentContent(documentData, procedureData, formattedDate) {
 function generateHeader(documentData, formattedDate) {
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+       xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+       xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
     <w:tbl>
         <w:tblPr>
             <w:tblW w:w="0" w:type="auto"/>
@@ -158,7 +170,7 @@ function generateHeader(documentData, formattedDate) {
                             <w:b/>
                             <w:sz w:val="22"/>
                         </w:rPr>
-                        <w:t>${documentData.headerConfig?.manualName || 'Manual de Políticas y Procedimientos'}</w:t>
+                        <w:t>${escapeXML(documentData.headerConfig?.manualName || 'Manual de Políticas y Procedimientos')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -286,7 +298,7 @@ function generateHeader(documentData, formattedDate) {
                             <w:sz w:val="24"/>
                             <w:smallCaps/>
                         </w:rPr>
-                        <w:t>${documentData.headerConfig?.policyName || 'PROCEDIMIENTO'}</w:t>
+                        <w:t>${escapeXML(documentData.headerConfig?.policyName || 'PROCEDIMIENTO')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -310,7 +322,7 @@ function generateHeader(documentData, formattedDate) {
                             <w:b/>
                             <w:sz w:val="20"/>
                         </w:rPr>
-                        <w:t>CÓDIGO: ${documentData.headerConfig?.codigo || 'XX-P-XXX-#'}</w:t>
+                        <w:t>CÓDIGO: ${escapeXML(documentData.headerConfig?.codigo || 'XX-P-XXX-#')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -332,7 +344,7 @@ function generateHeader(documentData, formattedDate) {
                         <w:rPr>
                             <w:sz w:val="18"/>
                         </w:rPr>
-                        <w:t>Área: ${documentData.headerConfig?.area || 'Área responsable'}</w:t>
+                        <w:t>Área: ${escapeXML(documentData.headerConfig?.area || 'Área responsable')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -351,7 +363,7 @@ function generateHeader(documentData, formattedDate) {
                         <w:rPr>
                             <w:sz w:val="18"/>
                         </w:rPr>
-                        <w:t>Unidad: ${documentData.headerConfig?.unidad || 'Unidad específica'}</w:t>
+                        <w:t>Unidad: ${escapeXML(documentData.headerConfig?.unidad || 'Unidad específica')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -373,7 +385,7 @@ function generateHeader(documentData, formattedDate) {
                         <w:rPr>
                             <w:sz w:val="18"/>
                         </w:rPr>
-                        <w:t>Revisión: ${documentData.headerConfig?.revision || '(1)'}</w:t>
+                        <w:t>Revisión: ${escapeXML(documentData.headerConfig?.revision || '(1)')}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -498,8 +510,20 @@ function generateTermsSection(content) {
     ${formatContentXML(content || 'Contenido pendiente de completar.')}`;
 }
 
-// Función para formatear contenido en XML
+// CORRECCIÓN: Función para escapar caracteres XML
+function escapeXML(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/&/g, '&amp;')
+             .replace(/</g, '&lt;')
+             .replace(/>/g, '&gt;')
+             .replace(/"/g, '&quot;')
+             .replace(/'/g, '&apos;');
+}
+
+// CORRECCIÓN: Función para formatear contenido en XML
 function formatContentXML(content) {
+    if (!content) return '';
+    
     const lines = content.split('\n');
     let formatted = '';
     
@@ -509,14 +533,14 @@ function formatContentXML(content) {
             formatted += `
     <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
         <w:r>
-            <w:t> </w:t>
+            <w:t xml:space="preserve"> </w:t>
         </w:r>
     </w:p>`;
         } else {
             formatted += `
     <w:p w:rsidR="00A87A6F" w:rsidRDefault="00A87A6F">
         <w:r>
-            <w:t>${trimmedLine}</w:t>
+            <w:t xml:space="preserve">${escapeXML(trimmedLine)}</w:t>
         </w:r>
     </w:p>`;
         }
@@ -525,7 +549,7 @@ function formatContentXML(content) {
     return formatted;
 }
 
-// Función para generar la tabla de procedimiento en XML
+// CORRECCIÓN: Función para generar la tabla de procedimiento en XML
 function generateProcedureTableXML(procedureData) {
     if (!procedureData || procedureData.length === 0) {
         return formatContentXML('Contenido pendiente de completar.');
@@ -610,10 +634,35 @@ function generateProcedureTableXML(procedureData) {
         const activity = row.activity || '';
         const level = row.level || '';
 
-        // Aplicar prefijo "5." solo si no es una subsección ya numerada
-        if (number && !number.includes('.') && !isNaN(number.split('.')[0])) {
-            number = `5.${number}`;
+        // CORRECCIÓN: Manejar números simples y jerárquicos (ej. "4.1" -> "5.4.1"),
+        // ahora aplicado independientemente del valor de 'level'
+        if (number) {
+            const trimmed = String(number).trim();
+
+            // Si es un número simple (p.ej. "3"), agregar "5."
+            if (!trimmed.includes('.') && !isNaN(trimmed)) {
+                number = `5.${trimmed}`;
+            } else {
+                // Si es jerárquico (p.ej. "4.1" o "4.1.2") y no comienza con "5.",
+                // validar que todos los segmentos sean numéricos y prefijar "5."
+                if (!trimmed.startsWith('5.')) {
+                    const segments = trimmed.split('.');
+                    const allNumeric = segments.every(seg => /^\d+$/.test(seg));
+                    if (allNumeric) {
+                        number = `5.${trimmed}`;
+                    } else {
+                        // Si no es un patrón numérico esperado, mantener tal cual
+                        number = trimmed;
+                    }
+                } else {
+                    // Ya comienza con "5.", mantener
+                    number = trimmed;
+                }
+            }
         }
+
+        // Asegurar que number sea cadena antes de escapar
+        number = String(number);
 
         tableXML += `
         <w:tr w:rsidR="00A87A6F" w:rsidTr="00A87A6F">
@@ -632,7 +681,7 @@ function generateProcedureTableXML(procedureData) {
                         ${level === 'sub' ? '<w:ind w:left="200"/>' : ''}
                     </w:pPr>
                     <w:r>
-                        <w:t>${number}</w:t>
+                        <w:t>${escapeXML(number)}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -650,7 +699,7 @@ function generateProcedureTableXML(procedureData) {
                         <w:spacing w:before="0" w:after="0"/>
                     </w:pPr>
                     <w:r>
-                        <w:t>${who}</w:t>
+                        <w:t>${escapeXML(who)}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -668,7 +717,7 @@ function generateProcedureTableXML(procedureData) {
                         <w:spacing w:before="0" w:after="0"/>
                     </w:pPr>
                     <w:r>
-                        <w:t>${activity}</w:t>
+                        <w:t>${escapeXML(activity)}</w:t>
                     </w:r>
                 </w:p>
             </w:tc>
@@ -681,7 +730,7 @@ function generateProcedureTableXML(procedureData) {
     return tableXML;
 }
 
-// Funciones auxiliares para la estructura del documento .doc
+// Funciones auxiliares para la estructura del documento .docx
 function getContentTypes() {
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">

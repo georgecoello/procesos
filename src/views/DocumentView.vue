@@ -88,8 +88,8 @@
             
             <button
               class="toolbar-btn"
-              :class="{ 'active': section.editor?.isActive('bulletList') }"
-              @click="section.editor?.chain().focus().toggleBulletList().run()"
+              :class="{ 'active': section.editor?.isActive('bulletList') && !section.editor?.isActive('bulletList', { 'data-type': 'letter' }) }"
+              @click="toggleBulletList(section.editor)"
               title="Lista con viñetas"
             >
               <span>•</span>
@@ -102,6 +102,15 @@
               title="Lista numerada"
             >
               <span>1.</span>
+            </button>
+
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('bulletList', { 'data-type': 'letter' }) }"
+              @click="toggleLetterList(section.editor)"
+              title="Lista con letras"
+            >
+              <span>a)</span>
             </button>
             
             <div class="toolbar-separator"></div>
@@ -206,8 +215,8 @@ Fin del proceso
             
             <button
               class="toolbar-btn"
-              :class="{ 'active': procedimientoEditor?.isActive('bulletList') }"
-              @click="procedimientoEditor?.chain().focus().toggleBulletList().run()"
+              :class="{ 'active': procedimientoEditor?.isActive('bulletList') && !procedimientoEditor?.isActive('bulletList', { 'data-type': 'letter' }) }"
+              @click="toggleBulletList(procedimientoEditor)"
               title="Lista con viñetas"
             >
               <span>•</span>
@@ -220,6 +229,15 @@ Fin del proceso
               title="Lista numerada"
             >
               <span>1.</span>
+            </button>
+
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': procedimientoEditor?.isActive('bulletList', { 'data-type': 'letter' }) }"
+              @click="toggleLetterList(procedimientoEditor)"
+              title="Lista con letras"
+            >
+              <span>a)</span>
             </button>
             
             <div class="toolbar-separator"></div>
@@ -331,8 +349,8 @@ Fin del proceso
             
             <button
               class="toolbar-btn"
-              :class="{ 'active': section.editor?.isActive('bulletList') }"
-              @click="section.editor?.chain().focus().toggleBulletList().run()"
+              :class="{ 'active': section.editor?.isActive('bulletList') && !section.editor?.isActive('bulletList', { 'data-type': 'letter' }) }"
+              @click="toggleBulletList(section.editor)"
               title="Lista con viñetas"
             >
               <span>•</span>
@@ -345,6 +363,15 @@ Fin del proceso
               title="Lista numerada"
             >
               <span>1.</span>
+            </button>
+
+            <button
+              class="toolbar-btn"
+              :class="{ 'active': section.editor?.isActive('bulletList', { 'data-type': 'letter' }) }"
+              @click="toggleLetterList(section.editor)"
+              title="Lista con letras"
+            >
+              <span>a)</span>
             </button>
             
             <div class="toolbar-separator"></div>
@@ -397,10 +424,27 @@ Fin del proceso
 
 <script>
 import { generateWordDocument } from '@/utils/docGenerator'
-import { useEditor, EditorContent } from '@tiptap/vue-3'
+import { Editor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Placeholder from '@tiptap/extension-placeholder'
+import HardBreak from '@tiptap/extension-hard-break'
+import BulletList from '@tiptap/extension-bullet-list'
+
+// Extensión personalizada para listas con letras
+const LetterListExtension = BulletList.extend({
+  addAttributes() {
+    return {
+      'data-type': {
+        default: null,
+        parseHTML: element => element.getAttribute('data-type'),
+        renderHTML: attributes => {
+          return attributes['data-type'] ? { 'data-type': attributes['data-type'] } : {}
+        }
+      }
+    }
+  }
+})
 
 export default {
   name: 'DocumentView',
@@ -477,7 +521,9 @@ export default {
     }
   },
   mounted() {
-    this.initializeEditors();
+    this.$nextTick(() => {
+      this.initializeEditors();
+    });
   },
   beforeUnmount() {
     this.destroyEditors();
@@ -486,56 +532,187 @@ export default {
     initializeEditors() {
       // Inicializar secciones principales
       this.sections.forEach((section, index) => {
-        section.editor = useEditor({
+        section.editor = new Editor({
           content: section.content,
           extensions: [
-            StarterKit,
+            StarterKit.configure({
+              hardBreak: {
+                keepMarks: true,
+              },
+              bulletList: {
+                HTMLAttributes: {
+                  class: 'bullet-list',
+                },
+              },
+            }),
             Underline,
+            HardBreak.configure({
+              keepMarks: true,
+            }),
             Placeholder.configure({
               placeholder: section.placeholder
-            })
+            }),
+            LetterListExtension
           ],
           onUpdate: () => {
             this.sections[index].content = section.editor.getHTML();
           },
           onCreate: () => {
-            // Asegurarse de que el editor esté listo
             console.log(`Editor ${section.title} inicializado`);
+          },
+          editorProps: {
+            attributes: {
+              class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+              style: 'min-height: 120px; white-space: pre-line;'
+            },
+            handleKeyDown: (view, event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                const { state } = view;
+                const { $from } = state.selection;
+                const depth = $from.depth;
+                const parentNode = depth > 0 ? $from.node(depth - 1) : null;
+                if (parentNode && parentNode.type && parentNode.type.name === 'listItem') {
+                  return false;
+                }
+                view.dispatch(state.tr.replaceSelectionWith(state.schema.nodes.hardBreak.create()).scrollIntoView());
+                return true;
+              }
+              return false;
+            }
           }
         });
       });
 
       // Inicializar secciones restantes
       this.remainingSections.forEach((section, index) => {
-        section.editor = useEditor({
+        section.editor = new Editor({
           content: section.content,
           extensions: [
-            StarterKit,
+            StarterKit.configure({
+              hardBreak: {
+                keepMarks: true,
+              },
+              bulletList: {
+                HTMLAttributes: {
+                  class: 'bullet-list',
+                },
+              },
+            }),
             Underline,
+            HardBreak.configure({
+              keepMarks: true,
+            }),
             Placeholder.configure({
               placeholder: section.placeholder
-            })
+            }),
+            LetterListExtension
           ],
           onUpdate: () => {
             this.remainingSections[index].content = section.editor.getHTML();
+          },
+          editorProps: {
+            attributes: {
+              class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+              style: 'min-height: 120px; white-space: pre-line;'
+            },
+            handleKeyDown: (view, event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                const { state } = view;
+                const { $from } = state.selection;
+                const parent = $from.parent;
+                if (parent && parent.type && parent.type.name === 'listItem') {
+                  return false;
+                }
+                view.dispatch(state.tr.replaceSelectionWith(state.schema.nodes.hardBreak.create()).scrollIntoView());
+                return true;
+              }
+              return false;
+            }
           }
         });
       });
 
       // Inicializar editor de procedimiento
-      this.procedimientoEditor = useEditor({
+      this.procedimientoEditor = new Editor({
         content: '',
         extensions: [
-          StarterKit,
+          StarterKit.configure({
+            hardBreak: {
+              keepMarks: true,
+            },
+            bulletList: {
+              HTMLAttributes: {
+                class: 'bullet-list',
+              },
+            },
+          }),
           Underline,
+          HardBreak.configure({
+            keepMarks: true,
+          }),
           Placeholder.configure({
             placeholder: 'Describe el procedimiento completo aquí en lenguaje natural...'
-          })
+          }),
+          LetterListExtension
         ],
         onCreate: () => {
           console.log('Editor de procedimiento inicializado');
+        },
+        editorProps: {
+          attributes: {
+            class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+            style: 'min-height: 200px; white-space: pre-line;'
+          },
+          handleKeyDown: (view, event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              const { state } = view;
+              const { $from } = state.selection;
+              const depth = $from.depth;
+              const parentNode = depth > 0 ? $from.node(depth - 1) : null;
+              if (parentNode && parentNode.type && parentNode.type.name === 'listItem') {
+                return false;
+              }
+              view.dispatch(state.tr.replaceSelectionWith(state.schema.nodes.hardBreak.create()).scrollIntoView());
+              return true;
+            }
+            return false;
+          }
         }
       });
+    },
+
+    // Método para alternar lista con letras
+    toggleLetterList(editor) {
+      if (!editor) return;
+
+      // Si ya está activa la lista de letras -> quitar atributo 'data-type' (vuelve a viñeta normal)
+      if (editor.isActive('bulletList', { 'data-type': 'letter' })) {
+        editor.chain().focus().updateAttributes('bulletList', { 'data-type': null }).run();
+        return;
+      }
+
+      // Si hay una lista normal activa -> convertirla a lista de letras
+      if (editor.isActive('bulletList')) {
+        editor.chain().focus().updateAttributes('bulletList', { 'data-type': 'letter' }).run();
+        return;
+      }
+
+      // Si no hay lista activa -> crear lista y luego marcar como 'letter' en una sola cadena
+      editor.chain().focus().toggleBulletList().updateAttributes('bulletList', { 'data-type': 'letter' }).run();
+    },
+
+    // Nuevo: método central para togglear viñetas normales y limpiar el atributo 'letter' si existe
+    toggleBulletList(editor) {
+      if (!editor) return;
+
+      // Si estamos en una lista de letras y se quiere viñeta normal -> quitar atributo 'letter'
+      if (editor.isActive('bulletList', { 'data-type': 'letter' })) {
+        editor.chain().focus().updateAttributes('bulletList', { 'data-type': null }).run();
+        return;
+      }
+
+      // En el resto de casos, hacer toggle normal (activar/desactivar)
+      editor.chain().focus().toggleBulletList().run();
     },
 
     destroyEditors() {
@@ -578,6 +755,48 @@ export default {
       return `${year}-${month}-${day}`;
     },
 
+    loadExampleProcedimiento() {
+      if (!this.procedimientoEditor) return;
+      
+      const exampleText = `El administrador revisa la lista de proveedores a pagar
+El administrador envía la lista al gerente general para revisión
+El gerente general revisa la lista de proveedores
+¿La lista está correcta?
+Si está correcta, el gerente general realiza el pago a los proveedores
+a) Verifica disponibilidad de fondos
+b) Prepara órdenes de pago
+c) Registra en el sistema contable
+Si no está correcta, el gerente general devuelve la lista al administrador
+El administrador verifica y corrige la información de los proveedores
+5.1.1 Consulta base de datos de proveedores
+5.1.2 Actualiza información faltante
+5.1.3 Valida documentos de respaldo
+El administrador actualiza la lista con la información corregida
+El proceso se repite desde el envío al gerente general
+Fin del proceso`;
+
+      // Convertir el texto plano a formato que Tiptap entienda con saltos de línea
+      const formattedContent = exampleText.split('\n').map(line => {
+        if (line.trim() === '') return '<p></p>';
+        
+        // Detectar si es una lista con letras (a), b), c), etc.)
+        if (/^[a-z]\)/.test(line.trim())) {
+          return `<ul data-type="letter"><li>${line.replace(/^[a-z]\)\s*/, '')}</li></ul>`;
+        }
+        
+        // Detectar si es una lista numerada (5.1.1, 5.1.2, etc.)
+        if (/^\d+\.\d+\.\d+/.test(line.trim())) {
+          return `<ul><li>${line}</li></ul>`;
+        }
+        
+        return `<p>${line}</p>`;
+      }).join('');
+
+      this.procedimientoEditor.commands.setContent(formattedContent);
+      this.showStatus('📝 Ejemplo con subsecciones cargado. Haz clic en "Generar Tabla Automáticamente" para ver el resultado.', 'info');
+    },
+
+    // Los demás métodos se mantienen igual...
     parseProcedimiento() {
       if (!this.procedimientoEditor) return;
       
@@ -722,62 +941,21 @@ export default {
     extractActivity(line, responsible) {
       if (!responsible) return line;
 
-      const patterns = [
-        new RegExp(`^el ${responsible.toLowerCase()}\\s+`, 'i'),
-        new RegExp(`^la ${responsible.toLowerCase()}\\s+`, 'i'),
-        new RegExp(`^los ${responsible.toLowerCase()}\\s+`, 'i'),
-        new RegExp(`^las ${responsible.toLowerCase()}\\s+`, 'i'),
-        new RegExp(`^${responsible.toLowerCase()}\\s+`, 'i')
-      ];
+      // Asegurar que 'responsible' se use correctamente y escapar caracteres para la regex
+      const respRaw = String(responsible).trim();
+      const respEscaped = respRaw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-      let activity = line;
-      for (const pattern of patterns) {
-        activity = activity.replace(pattern, '');
-      }
+      // Quitar prefijos típicos que repiten el responsable (ej. "El administrador ...")
+      const removePattern = new RegExp(`^(el\\s+${respEscaped}|la\\s+${respEscaped}|los\\s+${respEscaped}|las\\s+${respEscaped}|${respEscaped})\\s+`, 'i');
+      let activity = line.replace(removePattern, '').trim();
 
+      // Capitalizar primera letra
+      if (!activity) return '';
       return activity.charAt(0).toUpperCase() + activity.slice(1);
     },
 
     capitalizeFirstLetter(string) {
       return string.charAt(0).toUpperCase() + string.slice(1);
-    },
-
-    loadExampleProcedimiento() {
-      if (!this.procedimientoEditor) return;
-      
-      const exampleText = `El administrador revisa la lista de proveedores a pagar
-El administrador envía la lista al gerente general para revisión
-El gerente general revisa la lista de proveedores
-¿La lista está correcta?
-Si está correcta, el gerente general realiza el pago a los proveedores
-a) Verifica disponibilidad de fondos
-b) Prepara órdenes de pago
-c) Registra en el sistema contable
-Si no está correcta, el gerente general devuelve la lista al administrador
-El administrador verifica y corrige la información de los proveedores
-5.1.1 Consulta base de datos de proveedores
-5.1.2 Actualiza información faltante
-5.1.3 Valida documentos de respaldo
-El administrador actualiza la lista con la información corregida
-El proceso se repite desde el envío al gerente general
-Fin del proceso
-
-Proceso de compras urgentes
-El coordinador identifica la necesidad de compra urgente
-• Evalúa urgencia según criterios establecidos
-• Documenta justificación
-El coordinador completa el formulario de compra urgente
-El gerente aprueba la compra urgente
-¿La compra fue aprobada?
-Si fue aprobada, el departamento de compras procede con la adquisición
-i) Solicita cotizaciones
-ii) Evalúa proveedores
-iii) Emite orden de compra
-Si no fue aprobada, se archiva la solicitud
-Fin del proceso`;
-
-      this.procedimientoEditor.commands.setContent(exampleText);
-      this.showStatus('📝 Ejemplo con subsecciones cargado. Haz clic en "Generar Tabla Automáticamente" para ver el resultado.', 'info');
     },
 
     getRowClass(row) {
@@ -805,10 +983,8 @@ Fin del proceso`;
     async generateWordDocument() {
       this.isGenerating = true;
       
-      // Obtener el contenido de texto del editor de procedimiento
       const procedimientoText = this.procedimientoEditor ? this.procedimientoEditor.getText() : '';
       
-      // Asegurarse de que la tabla esté actualizada
       if (procedimientoText && this.generatedTable.length === 0) {
         this.parseProcedimiento();
       }
@@ -835,7 +1011,6 @@ Fin del proceso`;
 
     resetDocument() {
       if (confirm('¿Estás seguro de que quieres limpiar todo el documento? Se perderán todos los cambios.')) {
-        // Limpiar todos los editores
         this.sections.forEach(section => {
           if (section.editor) {
             section.editor.commands.clearContent();
@@ -851,7 +1026,6 @@ Fin del proceso`;
         }
         this.generatedTable = [];
         this.headerConfig.fecha = this.getFormattedDate();
-        // Restablecer valores por defecto
         this.headerConfig.manualName = 'Manual de Políticas y Procedimientos';
         this.headerConfig.policyName = 'PROCEDIMIENTO';
         this.headerConfig.codigo = 'XX-P-XXX-#';
@@ -1114,10 +1288,7 @@ Fin del proceso`;
   line-height: 1.6;
   color: #2c3e50;
   min-height: 100px;
-}
-
-:deep(.ProseMirror) {
-  padding: 0;
+  padding: 0 !important;
 }
 
 :deep(.ProseMirror p) {
@@ -1167,6 +1338,30 @@ Fin del proceso`;
   height: 0;
   pointer-events: none;
 }
+
+/* Estilos para listas con letras en el editor */
+:deep(ul[data-type="letter"]) {
+  list-style-type: lower-alpha !important;
+  padding-left: 24px !important;
+  margin: 8px 0 !important;
+}
+
+:deep(ul[data-type="letter"] li) {
+  list-style-type: lower-alpha !important;
+  margin-bottom: 4px !important;
+}
+
+:deep(ul:not([data-type="letter"])) {
+  list-style-type: disc !important;
+  padding-left: 24px !important;
+  margin: 8px 0 !important;
+}
+
+:deep(ul:not([data-type="letter"]) li) {
+  list-style-type: disc !important;
+  margin-bottom: 4px !important;
+}
+
 
 .action-buttons {
   display: flex;
