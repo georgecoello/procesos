@@ -288,9 +288,14 @@ Fin del proceso
               <tbody>
                 <tr v-for="(row, index) in generatedTable" :key="index" 
                     :class="getRowClass(row)">
-                  <td>{{ row.number ? '5.' + row.number : '&nbsp;' }}</td>
+                  <td>{{ row.number || '&nbsp;' }}</td>
                   <td>{{ row.who || '&nbsp;' }}</td>
                   <td>{{ row.activity || '&nbsp;' }}</td>
+                </tr>
+                <tr v-if="generatedTable.length === 0">
+                  <td colspan="3" style="text-align: center; color: #6c757d;">
+                    La tabla se generará automáticamente al hacer clic en "Generar Tabla Automáticamente"
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -299,11 +304,11 @@ Fin del proceso
 
         <div class="action-buttons">
           <button @click="parseProcedimiento" class="parse-btn"> 
-            <font-awesome-icon icon="table" class="button-icon" />
+            <span class="button-icon">📊</span>
             Generar Tabla Automáticamente
           </button>
           <button @click="loadExampleProcedimiento" class="sample-btn">
-            <font-awesome-icon icon="file-alt" class="button-icon" />
+            <span class="button-icon">📝</span>
             Cargar Ejemplo con Subsecciones
           </button>
         </div>
@@ -410,11 +415,11 @@ Fin del proceso
       
       <div class="document-controls">
         <button @click="generateWordDocument" class="generate-btn" :disabled="isGenerating">
-          <font-awesome-icon icon="file-word" class="button-icon" />
+          <span class="button-icon">📄</span>
           Generar Documento Word
         </button>
         <button @click="resetDocument" class="reset-btn">
-          <font-awesome-icon icon="trash" class="button-icon" />
+          <span class="button-icon">🗑️</span>
           Limpiar Todo
         </button>
       </div>
@@ -659,6 +664,9 @@ export default {
         onCreate: () => {
           console.log('Editor de procedimiento inicializado');
         },
+        onUpdate: () => {
+          // Actualizar contenido del procedimiento si es necesario
+        },
         editorProps: {
           attributes: {
             class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
@@ -797,14 +805,13 @@ Fin del proceso`;
       this.showStatus('📝 Ejemplo con subsecciones cargado. Haz clic en "Generar Tabla Automáticamente" para ver el resultado.', 'info');
     },
 
-    // Los demás métodos se mantienen igual...
     parseProcedimiento() {
       if (!this.procedimientoEditor) return;
       
       const textContent = this.procedimientoEditor.getText();
       
       if (!textContent.trim()) {
-        this.showStatus(' Por favor ingresa la descripción del procedimiento', 'error');
+        this.showStatus('❌ Por favor ingresa la descripción del procedimiento', 'error');
         return;
       }
 
@@ -885,9 +892,9 @@ Fin del proceso`;
         }
 
         this.generatedTable = table;
-        this.showStatus(' Tabla generada automáticamente desde la descripción', 'success');
+        this.showStatus('✅ Tabla generada automáticamente desde la descripción', 'success');
       } catch (error) {
-        this.showStatus(' Error al procesar la descripción: ' + error.message, 'error');
+        this.showStatus('❌ Error al procesar la descripción: ' + error.message, 'error');
       }
     },
 
@@ -986,25 +993,27 @@ Fin del proceso`;
       
       const procedimientoText = this.procedimientoEditor ? this.procedimientoEditor.getText() : '';
       
+      // Si hay texto en el procedimiento pero no se ha generado la tabla, generarla
       if (procedimientoText && this.generatedTable.length === 0) {
         this.parseProcedimiento();
       }
 
       const documentData = {
         headerConfig: this.headerConfig,
-        objetivo: this.sections[0].content,
-        alcance: this.sections[1].content,
-        responsabilidades: this.sections[2].content,
-        normativa: this.sections[3].content,
-        anexos: this.remainingSections[0].content,
-        terminos: this.remainingSections[1].content
+        objetivo: this.sections[0].editor.getHTML(),
+        alcance: this.sections[1].editor.getHTML(),
+        responsabilidades: this.sections[2].editor.getHTML(),
+        normativa: this.sections[3].editor.getHTML(),
+        anexos: this.remainingSections[0].editor.getHTML(),
+        terminos: this.remainingSections[1].editor.getHTML()
       };
 
       try {
         await generateWordDocument(documentData, this.generatedTable);
-        this.showStatus(' Documento Word generado exitosamente! El encabezado aparecerá en todas las páginas.', 'success');
+        this.showStatus('✅ Documento Word generado exitosamente!', 'success');
       } catch (error) {
-        this.showStatus(' Error al generar el documento: ' + error.message, 'error');
+        console.error('Error generating document:', error);
+        this.showStatus('❌ Error al generar el documento: ' + error.message, 'error');
       } finally {
         this.isGenerating = false;
       }
@@ -1362,7 +1371,6 @@ Fin del proceso`;
   list-style-type: disc !important;
   margin-bottom: 4px !important;
 }
-
 
 .action-buttons {
   display: flex;
