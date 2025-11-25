@@ -1,15 +1,33 @@
 <template>
   <div class="document-view">
-    <div class="status-message" v-if="statusMessage" :class="statusType">
-      {{ statusMessage }}
+    <!-- Modal de confirmación mejorado -->
+    <div v-if="showResetModal" class="modal-overlay" @click.self="closeResetModal">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3 class="modal-title">Confirmar Limpieza</h3>
+          <button class="modal-close-btn" @click="closeResetModal">
+            <span>×</span>
+          </button>
+        </div>
+        
+        <div class="modal-content">
+          <p class="modal-message">¿Estás seguro de que quieres limpiar todo el documento?</p>
+          <p class="modal-warning">Se perderán todos los cambios no guardados.</p>
+        </div>
+        
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-cancel" @click="closeResetModal">
+            Cancelar
+          </button>
+          <button class="modal-btn modal-btn-confirm" @click="confirmReset">
+            Limpiar Todo
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Spinner overlay -->
-    <div v-if="isGenerating" class="spinner-overlay">
-      <div class="spinner-content">
-        <div class="spinner">⏳</div>
-        <p>Generando documento Word...</p>
-      </div>
+    <div class="status-message" v-if="statusMessage" :class="statusType">
+      {{ statusMessage }}
     </div>
 
     <div class="document-editor">
@@ -19,27 +37,27 @@
         <div class="header-fields">
           <div class="field-group">
             <label>Manual de Políticas y Procedimientos:</label>
-            <input v-model="headerConfig.manualName" placeholder="Manual de Políticas y Procedimientos" class="header-input">
+            <input v-model="headerConfig.manualName" placeholder="Ingrese el nombre del manual" class="header-input">
           </div>
           <div class="field-group">
             <label>POLÍTICA O PROCEDIMIENTO DE:</label>
-            <input v-model="headerConfig.policyName" placeholder="NOMBRE DEL PROCEDIMIENTO" class="header-input">
+            <input v-model="headerConfig.policyName" placeholder="Ingrese el nombre del procedimiento" class="header-input">
           </div>
           <div class="field-group">
             <label>CÓDIGO:</label>
-            <input v-model="headerConfig.codigo" placeholder="XX-P-XXX-#" class="header-input">
+            <input v-model="headerConfig.codigo" placeholder="Ej: XX-P-XXX-#" class="header-input">
           </div>
           <div class="field-group">
             <label>Área:</label>
-            <input v-model="headerConfig.area" placeholder="Administración" class="header-input">
+            <input v-model="headerConfig.area" placeholder="Ej: Administración" class="header-input">
           </div>
           <div class="field-group">
             <label>Unidad:</label>
-            <input v-model="headerConfig.unidad" placeholder="Finanzas" class="header-input">
+            <input v-model="headerConfig.unidad" placeholder="Ej: Finanzas" class="header-input">
           </div>
           <div class="field-group">
             <label>Revisión:</label>
-            <input v-model="headerConfig.revision" placeholder="01" class="header-input">
+            <input v-model="headerConfig.revision" placeholder="Ej: 01" class="header-input">
           </div>
           <div class="field-group">
             <label>Fecha:</label>
@@ -304,11 +322,9 @@ Fin del proceso
 
         <div class="action-buttons">
           <button @click="parseProcedimiento" class="parse-btn"> 
-            <span class="button-icon">📊</span>
             Generar Tabla Automáticamente
           </button>
           <button @click="loadExampleProcedimiento" class="sample-btn">
-            <span class="button-icon">📝</span>
             Cargar Ejemplo con Subsecciones
           </button>
         </div>
@@ -415,11 +431,11 @@ Fin del proceso
       
       <div class="document-controls">
         <button @click="generateWordDocument" class="generate-btn" :disabled="isGenerating">
-          <span class="button-icon">📄</span>
+          <font-awesome-icon icon="file-word" class="feature-icon" />
           Generar Documento Word
         </button>
         <button @click="resetDocument" class="reset-btn">
-          <span class="button-icon">🗑️</span>
+          <font-awesome-icon icon="trash" class="feature-icon" />
           Limpiar Todo
         </button>
       </div>
@@ -458,13 +474,14 @@ export default {
   },
   data() {
     return {
+      showResetModal: false,
       headerConfig: {
-        manualName: 'Manual de Políticas y Procedimientos',
-        policyName: 'PROCEDIMIENTO',
-        codigo: 'XX-P-XXX-#',
-        area: 'Administración',
-        unidad: 'Finanzas',
-        revision: '01',
+        manualName: '',
+        policyName: '',
+        codigo: '',
+        area: '',
+        unidad: '',
+        revision: '',
         fecha: this.getFormattedDate()
       },
       sections: [
@@ -1020,30 +1037,47 @@ Fin del proceso`;
     },
 
     resetDocument() {
-      if (confirm('¿Estás seguro de que quieres limpiar todo el documento? Se perderán todos los cambios.')) {
-        this.sections.forEach(section => {
-          if (section.editor) {
-            section.editor.commands.clearContent();
-          }
-        });
-        this.remainingSections.forEach(section => {
-          if (section.editor) {
-            section.editor.commands.clearContent();
-          }
-        });
-        if (this.procedimientoEditor) {
-          this.procedimientoEditor.commands.clearContent();
+      // Mostrar modal personalizado en lugar de confirm() nativo
+      this.showResetModal = true;
+    },
+
+    closeResetModal() {
+      this.showResetModal = false;
+    },
+
+    confirmReset() {
+      this.showResetModal = false;
+      this.executeReset();
+      this.showStatus('🗑️ Todo el contenido ha sido resetado', 'info');
+    },
+
+    executeReset() {
+      // Limpiar secciones de contenido
+      this.sections.forEach(section => {
+        if (section.editor) {
+          section.editor.commands.clearContent();
         }
-        this.generatedTable = [];
-        this.headerConfig.fecha = this.getFormattedDate();
-        this.headerConfig.manualName = 'Manual de Políticas y Procedimientos';
-        this.headerConfig.policyName = 'PROCEDIMIENTO';
-        this.headerConfig.codigo = 'XX-P-XXX-#';
-        this.headerConfig.area = 'Administración';
-        this.headerConfig.unidad = 'Finanzas';
-        this.headerConfig.revision = '01';
-        this.showStatus('🗑️ Todo el contenido ha sido resetado', 'info');
+      });
+      this.remainingSections.forEach(section => {
+        if (section.editor) {
+          section.editor.commands.clearContent();
+        }
+      });
+      if (this.procedimientoEditor) {
+        this.procedimientoEditor.commands.clearContent();
       }
+      this.generatedTable = [];
+      
+      // Limpiar configuración del encabezado
+      this.headerConfig = {
+        manualName: '',
+        policyName: '',
+        codigo: '',
+        area: '',
+        unidad: '',
+        revision: '',
+        fecha: this.getFormattedDate()
+      };
     },
 
     showStatus(message, type) {
@@ -1060,6 +1094,174 @@ Fin del proceso`;
 </script>
 
 <style scoped>
+/* Estilos para el modal mejorado */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 450px;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+  border: 1px solid #e1e8ed;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px 0;
+  background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+  border-bottom: 1px solid #fdcb6e;
+}
+
+.modal-icon {
+  width: 40px;
+  height: 40px;
+  background: #f39c12;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  font-size: 18px;
+}
+
+.modal-title {
+  flex: 1;
+  margin: 0;
+  color: #e67e22;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #95a5a6;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: #f8f9fa;
+  color: #e74c3c;
+}
+
+.modal-content {
+  padding: 24px;
+  text-align: center;
+}
+
+.modal-message {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.modal-warning {
+  font-size: 0.95rem;
+  color: #e74c3c;
+  margin: 0;
+  font-weight: 500;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  padding: 0 24px 24px;
+  justify-content: center;
+}
+
+.modal-btn {
+  flex: 1;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.modal-btn-cancel {
+  background-color: #ecf0f1;
+  color: #2c3e50;
+  border: 2px solid #bdc3c7;
+}
+
+.modal-btn-cancel:hover {
+  background-color: #d5dbdb;
+  border-color: #95a5a6;
+  transform: translateY(-1px);
+}
+
+.modal-btn-confirm {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  border: 2px solid #c0392b;
+}
+
+.modal-btn-confirm:hover {
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.btn-icon {
+  font-size: 16px;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Estilos existentes del documento */
 .document-view {
   max-width: 1200px;
   margin: 0 auto;
@@ -1096,22 +1298,22 @@ Fin del proceso`;
 }
 
 .generate-btn {
-  background-color: #27ae60;
+  background-color: #2c5aa0; 
   color: white;
 }
 
 .generate-btn:hover:not(:disabled) {
-  background-color: #219a52;
+  background-color: #15386c; 
   transform: translateY(-2px);
 }
 
 .reset-btn {
-  background-color: #e74c3c;
+  background-color: red;
   color: white;
 }
 
 .reset-btn:hover {
-  background-color: #c0392b;
+  background-color: rgb(181, 20, 20);
   transform: translateY(-2px);
 }
 
@@ -1174,6 +1376,16 @@ Fin del proceso`;
   border-radius: 6px;
   font-size: 14px;
   transition: border-color 0.3s ease;
+}
+
+.header-input::placeholder {
+  color: #6c757d;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.header-input:focus::placeholder {
+  opacity: 0.5;
 }
 
 .header-input:focus {
@@ -1496,45 +1708,6 @@ Fin del proceso`;
   background-color: #ffffff;
 }
 
-.spinner-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.spinner-content {
-  background: white;
-  padding: 30px;
-  border-radius: 10px;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.spinner {
-  font-size: 2rem;
-  margin-bottom: 15px;
-  display: inline-block;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.spinner-content p {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #333;
-}
-
 .status-message {
   padding: 15px 20px;
   margin: 20px auto;
@@ -1642,6 +1815,37 @@ Fin del proceso`;
     font-size: 11px;
     min-width: 24px;
     height: 24px;
+  }
+
+  /* Modal responsive */
+  .modal-container {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .modal-header {
+    padding: 16px 20px 0;
+  }
+  
+  .modal-content {
+    padding: 20px;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    padding: 0 20px 20px;
+  }
+  
+  .modal-btn {
+    width: 100%;
+  }
+  
+  .modal-title {
+    font-size: 1.2rem;
+  }
+  
+  .modal-message {
+    font-size: 1rem;
   }
 }
 

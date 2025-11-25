@@ -3,21 +3,26 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, Ta
 
 /**
  * Genera y descarga un .docx usando la librería 'docx'.
- * Incluye definiciones de numbering para viñetas, números y letras.
+ * Con estilos mejorados similares a la imagen de referencia
  */
 export async function generateWordDocument(documentData = {}, procedureData = []) {
   try {
     const formattedDate = formatDate(documentData.headerConfig?.fecha);
 
-    // Crear el documento con todas las secciones
+    // Crear el documento con estilos mejorados
     const doc = new Document({
-      // Configuración de idioma español (Honduras)
       coreProperties: {
         title: documentData.headerConfig?.policyName || 'PROCEDIMIENTO',
         subject: 'Documento de procedimientos',
         creator: 'Sistema',
         description: 'Procedimiento generado automáticamente',
-        language: 'es-HN', // Español Honduras
+        language: 'es-HN',
+        keywords: ['procedimiento', 'políticas', 'Honduras'],
+      },
+      settings: {
+        language: {
+          value: 'es-HN',
+        },
       },
       features: {
         updateFields: true,
@@ -25,19 +30,52 @@ export async function generateWordDocument(documentData = {}, procedureData = []
       styles: {
         paragraphStyles: [
           {
-            id: 'Heading1',
-            name: 'Título 1',
+            id: 'Title',
+            name: 'Título Principal',
             basedOn: 'Normal',
             next: 'Normal',
             quickFormat: true,
             run: {
               size: 28,
               bold: true,
-              color: '2C3E50',
-              font: 'Arial'
+              color: '1F4E79',
+              font: 'Times New Roman'
             },
             paragraph: {
-              spacing: { before: 400, after: 200 }
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 400, after: 300 },
+              border: {
+                bottom: {
+                  color: "1F4E79",
+                  space: 1,
+                  style: BorderStyle.SINGLE,
+                  size: 8
+                }
+              }
+            }
+          },
+          {
+            id: 'Heading1',
+            name: 'Título 1',
+            basedOn: 'Normal',
+            next: 'Normal',
+            quickFormat: true,
+            run: {
+              size: 24,
+              bold: true,
+              color: '2C3E50',
+              font: 'Times New Roman'
+            },
+            paragraph: {
+              spacing: { before: 400, after: 200 },
+              border: {
+                bottom: {
+                  color: "D4D4D4",
+                  space: 1,
+                  style: BorderStyle.SINGLE,
+                  size: 2
+                }
+              }
             }
           },
           {
@@ -47,7 +85,7 @@ export async function generateWordDocument(documentData = {}, procedureData = []
             next: 'Normal',
             run: {
               size: 22,
-              font: 'Arial'
+              font: 'Times New Roman'
             },
             paragraph: {
               spacing: { after: 120 }
@@ -95,7 +133,7 @@ export async function generateWordDocument(documentData = {}, procedureData = []
               { 
                 level: 0, 
                 format: LevelFormat.LOWER_LETTER, 
-                text: '%1.', 
+                text: '%1)', 
                 alignment: AlignmentType.LEFT,
                 style: {
                   paragraph: {
@@ -128,10 +166,10 @@ export async function generateWordDocument(documentData = {}, procedureData = []
           new Paragraph({
             children: [
               new TextRun({
-                text: '1. Objetivo o Propósito',
+                text: '1. OBJETIVO O PROPÓSITO',
                 bold: true,
-                size: 26,
-                font: 'Arial',
+                size: 24,
+                font: 'Times New Roman',
                 color: '2C3E50'
               })
             ],
@@ -144,10 +182,10 @@ export async function generateWordDocument(documentData = {}, procedureData = []
           new Paragraph({
             children: [
               new TextRun({
-                text: '2. Alcance',
+                text: '2. ALCANCE',
                 bold: true,
-                size: 26,
-                font: 'Arial',
+                size: 24,
+                font: 'Times New Roman',
                 color: '2C3E50'
               })
             ],
@@ -160,10 +198,10 @@ export async function generateWordDocument(documentData = {}, procedureData = []
           new Paragraph({
             children: [
               new TextRun({
-                text: '3. Responsabilidades',
+                text: '3. RESPONSABILIDADES',
                 bold: true,
-                size: 26,
-                font: 'Arial',
+                size: 24,
+                font: 'Times New Roman',
                 color: '2C3E50'
               })
             ],
@@ -176,10 +214,10 @@ export async function generateWordDocument(documentData = {}, procedureData = []
           new Paragraph({
             children: [
               new TextRun({
-                text: '4. Normativa',
+                text: '4. NORMATIVA',
                 bold: true,
-                size: 26,
-                font: 'Arial',
+                size: 24,
+                font: 'Times New Roman',
                 color: '2C3E50'
               })
             ],
@@ -192,10 +230,10 @@ export async function generateWordDocument(documentData = {}, procedureData = []
           new Paragraph({
             children: [
               new TextRun({
-                text: '5. Procedimiento',
+                text: '5. PROCEDIMIENTO',
                 bold: true,
-                size: 26,
-                font: 'Arial',
+                size: 24,
+                font: 'Times New Roman',
                 color: '2C3E50'
               })
             ],
@@ -208,10 +246,10 @@ export async function generateWordDocument(documentData = {}, procedureData = []
           new Paragraph({
             children: [
               new TextRun({
-                text: '6. Anexos',
+                text: '6. ANEXOS',
                 bold: true,
-                size: 26,
-                font: 'Arial',
+                size: 24,
+                font: 'Times New Roman',
                 color: '2C3E50'
               })
             ],
@@ -224,10 +262,10 @@ export async function generateWordDocument(documentData = {}, procedureData = []
           new Paragraph({
             children: [
               new TextRun({
-                text: '7. Términos y Referencias',
+                text: '7. TÉRMINOS Y REFERENCIAS',
                 bold: true,
-                size: 26,
-                font: 'Arial',
+                size: 24,
+                font: 'Times New Roman',
                 color: '2C3E50'
               })
             ],
@@ -265,21 +303,21 @@ export async function generateWordDocument(documentData = {}, procedureData = []
   }
 }
 
-// Función para crear la tabla del header
+// Función para crear la tabla del header con diseño mejorado
 function createHeaderTable(documentData, formattedDate) {
   return new Table({
     width: {
       size: 100,
       type: WidthType.PERCENTAGE,
     },
-    columnWidths: [2275, 2275, 2275, 2275], // 4 columnas de igual ancho
+    columnWidths: [2275, 2275, 2275, 2275],
     borders: {
-      top: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
-      left: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
-      bottom: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
-      right: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
-      insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
-      insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "000000" },
+      top: { style: BorderStyle.SINGLE, size: 4, color: "1F4E79" },
+      left: { style: BorderStyle.SINGLE, size: 4, color: "1F4E79" },
+      bottom: { style: BorderStyle.SINGLE, size: 4, color: "1F4E79" },
+      right: { style: BorderStyle.SINGLE, size: 4, color: "1F4E79" },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "1F4E79" },
+      insideVertical: { style: BorderStyle.SINGLE, size: 4, color: "1F4E79" },
     },
     rows: [
       // Primera fila: Logo, Manual, Páginas
@@ -287,49 +325,46 @@ function createHeaderTable(documentData, formattedDate) {
         children: [
           // Logo
           new TableCell({
+            shading: { fill: '1F4E79', type: ShadingType.CLEAR },
             children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
               children: [new TextRun({
-                text: "Logo",
+                text: "LOGO",
                 bold: true,
-                size: 22,
-                font: 'Arial'
+                size: 20,
+                font: 'Times New Roman',
+                color: 'FFFFFF'
               })]
             })]
           }),
           // Manual de Políticas y Procedimientos
           new TableCell({
+            shading: { fill: '1F4E79', type: ShadingType.CLEAR },
             children: [new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [new TextRun({
-                text: documentData.headerConfig?.manualName || 'Manual de Políticas y Procedimientos',
+                text: documentData.headerConfig?.manualName || 'MANUAL DE POLÍTICAS Y PROCEDIMIENTOS',
                 bold: true,
-                size: 22,
-                font: 'Arial'
+                size: 20,
+                font: 'Times New Roman',
+                color: 'FFFFFF'
               })]
             })]
           }),
-          // Páginas (ocupa 2 columnas) - Usando campos en español
+          // Páginas (ocupa 2 columnas)
           new TableCell({
             columnSpan: 2,
+            shading: { fill: '1F4E79', type: ShadingType.CLEAR },
             children: [new Paragraph({
               alignment: AlignmentType.RIGHT,
               children: [
-                new TextRun({ text: "Página ", bold: true, size: 22, font: 'Arial' }),
-                // Campo para número de página actual en español
-                new TextRun({
-                  text: "1", // Este número será estático pero se actualizará en Word
-                  bold: true,
-                  size: 22,
-                  font: 'Arial'
-                }),
-                new TextRun({ text: " de ", bold: true, size: 22, font: 'Arial' }),
-                // Campo para total de páginas en español
-                new TextRun({
-                  text: "1", // Este número será estático pero se actualizará en Word
-                  bold: true,
-                  size: 22,
-                  font: 'Arial'
-                }),
+                new TextRun({ 
+                  text: "PÁGINA 1 DE 1",
+                  bold: true, 
+                  size: 20, 
+                  font: 'Times New Roman',
+                  color: 'FFFFFF'
+                })
               ]
             })]
           }),
@@ -345,8 +380,9 @@ function createHeaderTable(documentData, formattedDate) {
               children: [new TextRun({
                 text: documentData.headerConfig?.policyName || 'PROCEDIMIENTO',
                 bold: true,
-                size: 24,
-                font: 'Arial',
+                size: 22,
+                font: 'Times New Roman',
+                color: '1F4E79',
                 allCaps: true,
               })]
             })]
@@ -360,7 +396,8 @@ function createHeaderTable(documentData, formattedDate) {
                 text: `CÓDIGO: ${documentData.headerConfig?.codigo || 'XX-P-XXX-#'}`,
                 bold: true,
                 size: 20,
-                font: 'Arial'
+                font: 'Times New Roman',
+                color: '1F4E79'
               })]
             })]
           }),
@@ -373,9 +410,11 @@ function createHeaderTable(documentData, formattedDate) {
           new TableCell({
             children: [new Paragraph({
               children: [new TextRun({
-                text: `Área: ${documentData.headerConfig?.area || 'Área responsable'}`,
+                text: `Área: ${documentData.headerConfig?.area || 'ÁREA RESPONSABLE'}`,
                 size: 18,
-                font: 'Arial'
+                font: 'Times New Roman',
+                bold: true,
+                language: 'es-HN'
               })]
             })]
           }),
@@ -383,9 +422,11 @@ function createHeaderTable(documentData, formattedDate) {
           new TableCell({
             children: [new Paragraph({
               children: [new TextRun({
-                text: `Unidad: ${documentData.headerConfig?.unidad || 'Unidad específica'}`,
+                text: `Unidad: ${documentData.headerConfig?.unidad || 'UNIDAD ESPECÍFICA'}`,
                 size: 18,
-                font: 'Arial'
+                font: 'Times New Roman',
+                bold: true,
+                language: 'es-HN'
               })]
             })]
           }),
@@ -396,7 +437,8 @@ function createHeaderTable(documentData, formattedDate) {
               children: [new TextRun({
                 text: `Revisión: ${documentData.headerConfig?.revision || '(1)'}`,
                 size: 18,
-                font: 'Arial'
+                font: 'Times New Roman',
+                bold: true,
               })]
             })]
           }),
@@ -408,7 +450,7 @@ function createHeaderTable(documentData, formattedDate) {
                 text: `Fecha: ${formattedDate}`,
                 bold: true,
                 size: 18,
-                font: 'Arial'
+                font: 'Times New Roman'
               })]
             })]
           }),
@@ -442,19 +484,17 @@ function safeText(value) {
 }
 
 /**
- * Parsea HTML simple (p, ul, ol, li, br) a Paragraphs de docx.
- * Asegura usar numbering.reference igual a la configuración del Document.
+ * Parsea HTML simple a Paragraphs de docx
  */
 function parseHtmlToParagraphs(html = '') {
   const paragraphs = [];
   if (!html) return paragraphs;
 
   try {
-    // Si no contiene tags, dividir por saltos de línea
     if (!html.includes('<') && !html.includes('>')) {
       const lines = String(html).split(/\n+/).map(s => safeText(s)).filter(Boolean);
       lines.forEach(line => paragraphs.push(new Paragraph({
-        children: [new TextRun({ text: line, size: 22, font: 'Arial' })],
+        children: [new TextRun({ text: line, size: 22, font: 'Times New Roman' })],
         spacing: { after: 120 }
       })));
       return paragraphs;
@@ -468,7 +508,7 @@ function parseHtmlToParagraphs(html = '') {
       if (node.nodeType !== Node.ELEMENT_NODE) {
         const text = safeText(node.textContent);
         if (text) paragraphs.push(new Paragraph({
-          children: [new TextRun({ text, size: 22, font: 'Arial' })],
+          children: [new TextRun({ text, size: 22, font: 'Times New Roman' })],
           spacing: { after: 120 }
         }));
         return;
@@ -479,7 +519,7 @@ function parseHtmlToParagraphs(html = '') {
       if (tag === 'p') {
         const text = safeText(node.textContent);
         if (text) paragraphs.push(new Paragraph({
-          children: [new TextRun({ text, size: 22, font: 'Arial' })],
+          children: [new TextRun({ text, size: 22, font: 'Times New Roman' })],
           spacing: { after: 120 }
         }));
       } else if (tag === 'ul' || tag === 'ol') {
@@ -492,7 +532,7 @@ function parseHtmlToParagraphs(html = '') {
           const liText = safeText(li.textContent);
           if (!liText) return;
           paragraphs.push(new Paragraph({
-            children: [new TextRun({ text: liText, size: 22, font: 'Arial' })],
+            children: [new TextRun({ text: liText, size: 22, font: 'Times New Roman' })],
             numbering: { reference: numberingRef, level: 0 },
             spacing: { after: 80 },
           }));
@@ -502,18 +542,17 @@ function parseHtmlToParagraphs(html = '') {
       } else {
         const text = safeText(node.textContent);
         if (text) paragraphs.push(new Paragraph({
-          children: [new TextRun({ text, size: 22, font: 'Arial' })],
+          children: [new TextRun({ text, size: 22, font: 'Times New Roman' })],
           spacing: { after: 120 }
         }));
       }
     });
   } catch (e) {
-    // Fallback: limpiar tags y dividir por saltos
     const cleaned = String(html).replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
     if (cleaned) {
       cleaned.split(/\n+/).map(s => safeText(s)).filter(Boolean).forEach(t => {
         paragraphs.push(new Paragraph({
-          children: [new TextRun({ text: t, size: 22, font: 'Arial' })],
+          children: [new TextRun({ text: t, size: 22, font: 'Times New Roman' })],
           spacing: { after: 120 }
         }));
       });
@@ -525,12 +564,12 @@ function parseHtmlToParagraphs(html = '') {
 }
 
 /**
- * Crea una tabla para el procedimiento (uso de docx Table)
+ * Crea una tabla para el procedimiento con diseño mejorado
  */
 function createProcedureTable(data = []) {
   if (!data || data.length === 0) {
     return new Paragraph({ 
-      children: [new TextRun({ text: 'No se ha definido el procedimiento.', size: 22, font: 'Arial' })],
+      children: [new TextRun({ text: 'No se ha definido el procedimiento.', size: 22, font: 'Times New Roman' })],
       spacing: { after: 120 } 
     });
   }
@@ -538,8 +577,8 @@ function createProcedureTable(data = []) {
   const headerRow = new TableRow({
     children: [
       new TableCell({
-        width: { size: 1700, type: WidthType.DXA },
-        shading: { fill: '2C3E50', type: ShadingType.CLEAR },
+        width: { size: 1500, type: WidthType.DXA },
+        shading: { fill: '1F4E79', type: ShadingType.CLEAR },
         margins: { top: 100, bottom: 100, left: 100, right: 100 },
         children: [new Paragraph({
           children: [new TextRun({ 
@@ -547,39 +586,39 @@ function createProcedureTable(data = []) {
             bold: true, 
             color: 'FFFFFF',
             size: 20,
-            font: 'Arial'
+            font: 'Times New Roman'
           })],
           alignment: AlignmentType.CENTER,
           spacing: { before: 100, after: 100 }
         })],
       }),
       new TableCell({
-        width: { size: 2800, type: WidthType.DXA },
-        shading: { fill: '2C3E50', type: ShadingType.CLEAR },
+        width: { size: 2500, type: WidthType.DXA },
+        shading: { fill: '1F4E79', type: ShadingType.CLEAR },
         margins: { top: 100, bottom: 100, left: 100, right: 100 },
         children: [new Paragraph({
           children: [new TextRun({ 
-            text: '(Quién)', 
+            text: '(QUIÉN)', 
             bold: true, 
             color: 'FFFFFF',
             size: 20,
-            font: 'Arial'
+            font: 'Times New Roman'
           })],
           alignment: AlignmentType.CENTER,
           spacing: { before: 100, after: 100 }
         })],
       }),
       new TableCell({
-        width: { size: 6800, type: WidthType.DXA },
-        shading: { fill: '2C3E50', type: ShadingType.CLEAR },
+        width: { size: 6500, type: WidthType.DXA },
+        shading: { fill: '1F4E79', type: ShadingType.CLEAR },
         margins: { top: 100, bottom: 100, left: 100, right: 100 },
         children: [new Paragraph({
           children: [new TextRun({ 
-            text: '(Actividad)', 
+            text: '(ACTIVIDAD)', 
             bold: true, 
             color: 'FFFFFF',
             size: 20,
-            font: 'Arial'
+            font: 'Times New Roman'
           })],
           alignment: AlignmentType.CENTER,
           spacing: { before: 100, after: 100 }
@@ -613,7 +652,7 @@ function createProcedureTable(data = []) {
             children: [new TextRun({ 
               text: number, 
               size: 20,
-              font: 'Arial',
+              font: 'Times New Roman',
               bold: true
             })],
             alignment: AlignmentType.CENTER,
@@ -627,8 +666,10 @@ function createProcedureTable(data = []) {
             children: [new TextRun({ 
               text: who, 
               size: 20,
-              font: 'Arial'
+              font: 'Times New Roman',
+              bold: true
             })],
+            alignment: AlignmentType.CENTER,
             spacing: { before: 100, after: 100 }
           })],
           shading: bg ? { fill: bg, type: ShadingType.CLEAR } : undefined,
@@ -639,7 +680,7 @@ function createProcedureTable(data = []) {
             children: [new TextRun({ 
               text: activity, 
               size: 20,
-              font: 'Arial'
+              font: 'Times New Roman'
             })],
             spacing: { before: 100, after: 100 }
           })],
@@ -653,10 +694,10 @@ function createProcedureTable(data = []) {
     rows,
     width: { size: 100, type: WidthType.PERCENTAGE },
     borders: {
-      top: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-      bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-      left: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
-      right: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
+      top: { style: BorderStyle.SINGLE, size: 2, color: '1F4E79' },
+      bottom: { style: BorderStyle.SINGLE, size: 2, color: '1F4E79' },
+      left: { style: BorderStyle.SINGLE, size: 2, color: '1F4E79' },
+      right: { style: BorderStyle.SINGLE, size: 2, color: '1F4E79' },
       insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
       insideVertical: { style: BorderStyle.SINGLE, size: 1, color: 'CCCCCC' },
     },
