@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, ShadingType, Header, LevelFormat, BorderStyle } from 'docx';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType, ShadingType, Header, LevelFormat, BorderStyle, SimpleField } from 'docx';
 
 /**
  * Genera y descarga un .docx usando la librería 'docx'.
@@ -9,7 +9,7 @@ export async function generateWordDocument(documentData = {}, procedureData = []
   try {
     const formattedDate = formatDate(documentData.headerConfig?.fecha);
 
-    // Crear el documento con estilos mejorados
+    // Crear el documento
     const doc = new Document({
       coreProperties: {
         title: documentData.headerConfig?.policyName || 'PROCEDIMIENTO',
@@ -303,7 +303,7 @@ export async function generateWordDocument(documentData = {}, procedureData = []
   }
 }
 
-// Función para crear la tabla del header con diseño mejorado
+// Función para crear la tabla del header con diseño mejorado y paginación dinámica
 function createHeaderTable(documentData, formattedDate) {
   return new Table({
     width: {
@@ -351,7 +351,7 @@ function createHeaderTable(documentData, formattedDate) {
               })]
             })]
           }),
-          // Páginas (ocupa 2 columnas)
+          // Páginas (ocupa 2 columnas) - USANDO CAMPOS DINÁMICOS
           new TableCell({
             columnSpan: 2,
             shading: { fill: '1F4E79', type: ShadingType.CLEAR },
@@ -359,12 +359,23 @@ function createHeaderTable(documentData, formattedDate) {
               alignment: AlignmentType.RIGHT,
               children: [
                 new TextRun({ 
-                  text: "PÁGINA 1 DE 1",
+                  text: "PÁGINA ",
                   bold: true, 
                   size: 20, 
                   font: 'Times New Roman',
                   color: 'FFFFFF'
-                })
+                }),
+                // Campo para número de página actual
+                new SimpleField("PAGE", ""),
+                new TextRun({ 
+                  text: " DE ",
+                  bold: true, 
+                  size: 20, 
+                  font: 'Times New Roman',
+                  color: 'FFFFFF'
+                }),
+                // Campo para número total de páginas
+                new SimpleField("NUMPAGES", "")
               ]
             })]
           }),
