@@ -21,17 +21,38 @@
         </div>
       </div>
       
-      <router-link to="/document" class="cta-button">
-        <font-awesome-icon icon="right-to-bracket" class="button-icon" />
-        Comenzar a Crear Documento
-      </router-link>
+      <div class="button-group">
+        <router-link to="/document" class="cta-button primary">
+          <font-awesome-icon icon="right-to-bracket" class="button-icon" />
+          Comenzar a Crear Documento
+        </router-link>
+        
+        <button @click="downloadManual" class="cta-button secondary">
+          <font-awesome-icon icon="book" class="button-icon" />
+          Descargar Manual de Usuario
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'HomeView'
+  name: 'HomeView',
+  methods: {
+    downloadManual() {
+      
+      // Descargar un archivo PDF
+      const manualUrl = '/manuales/manual-usuario.pdf'; // Ruta al archivo
+      const link = document.createElement('a');
+      link.href = manualUrl;
+      link.download = 'Manual_de_Usuario_Sistema_Gestion.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    }
+  }
 }
 </script>
 
@@ -94,12 +115,17 @@ export default {
   font-size: 1.4rem;
 }
 
+.button-group {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .cta-button {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background-color: #2c5aa0; 
-  color: white;
   padding: 15px 30px;
   text-decoration: none;
   border-radius: 5px;
@@ -107,12 +133,29 @@ export default {
   transition: all 0.3s ease;
   border: none;
   cursor: pointer;
+  font-family: inherit;
 }
 
-.cta-button:hover {
+.cta-button.primary {
+  background-color: #2c5aa0; 
+  color: white;
+}
+
+.cta-button.primary:hover {
   background-color: #1e3d72;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+.cta-button.secondary {
+  background-color: #27ae60;
+  color: white;
+}
+
+.cta-button.secondary:hover {
+  background-color: #219653;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 }
 
 .button-icon {
@@ -132,6 +175,17 @@ export default {
   .feature-card h3 {
     flex-direction: column;
     gap: 8px;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .cta-button {
+    width: 100%;
+    max-width: 300px;
+    justify-content: center;
   }
 }
 </style>
